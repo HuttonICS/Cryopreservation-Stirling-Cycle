@@ -1,5 +1,5 @@
 # Cryopreservation of a soil microbiome using a Stirling Cycle approach -a genomic assessment
-https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/16S-pre-processing.sh
+
 ### Introduction
 Collections of soil samples are kept by various institutions in either a refrigerated or occasionally frozen state, but conditions are not optimised to ensure the integrity of soil microbiome. In this study, we describe cryopreservation with a controlled rate cooler and estimate the genomic content of an exemplar soil sample before and after cryopreservation. Two methods of cryopreservation were applied and compared with control aliquots of soil. An optimised cryopreservation of soil samples is essential for the development of microbiome research in order to retain stable, functionally intact microbiomes.
 
