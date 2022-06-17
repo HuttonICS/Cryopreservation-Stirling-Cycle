@@ -22,3 +22,16 @@ qiime feature-classifier classify-sklearn \
 qiime metadata tabulate \
   --m-input-file taxonomy.qza \
   --o-visualization taxonomy.qzv
+  
+  ## Taxonomy-based filtering of tables and sequences for the unassigned sequences ##
+  qiime taxa filter-table \
+  --i-table table-unite.qza \
+  --i-taxonomy taxonomy.qza \
+  --p-exclude  Unassigned \
+  --o-filtered-table table-unite-filtered.qza
+  
+  qiime taxa filter-seqs \
+    --i-sequences rep-seqs-unite.qza \
+    --i-taxonomy taxonomy.qza \
+    --p-exclude Unassigned \
+    --o-filtered-sequences rep-seqs-unite.filtered.qza
