@@ -5,6 +5,8 @@ Collections of soil samples are kept by various institutions in either a refrige
 
 ### Table of contents
 #### ITS Sequencing data
+00-[(TXT) - Metadata](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS-meta-data.txt)
+
 01-[(Shell Script) Training the Qiime2 classifier with-UNITE reference sequences](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS-UNITE-Rep-Seq.sh)
 
 02-[(Shell Script) Download, QC, packing and trim the raw ITS sequencing data](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS-pre-processing.sh)
@@ -18,6 +20,8 @@ Collections of soil samples are kept by various institutions in either a refrige
 06-[(Shell Script) ITS sequencing process using Qiime2 - DADA2](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS-DADA2.sh)
 
 #### 16S Sequencing data
+00 - [(TXT) - Metadata](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/16s-meta-data.txt)
+
 01-[(Shell Script) Download, QC and trim the raw 16s sequencing data](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/16S-pre-processing.sh)
 
 02-[(Document-zip) QC in multiqc file format](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/16s-multiqc.zip)
@@ -33,3 +37,4 @@ The preprint is available at https://agrirxiv.org/search-details/?pan=2021027765
 Raw Sequencing data deposited on https://www.ncbi.nlm.nih.gov/bioproject/PRJEB46478/
 
 The information in the .qzv files can be visualised via: https://view.qiime2.org/
+
