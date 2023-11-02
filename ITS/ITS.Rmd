@@ -1,0 +1,346 @@
+---
+title: Cryopreservation of a soil microbiome using a Stirling Cycle approach – a genomic (ITS data)
+  assessment
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-11-01"
+---
+
+## Cyropreserve CABI - ITS
+
+Soil microbiomes are responsive to seasonal and long-term environmental factors, impacting their composition and function. This manuscript explores cryopreservation techniques using a controlled rate cooler and assesses the genomic integrity and bacterial growth of an exemplar soil sample before and after cryopreservation. The study demonstrates that the controlled rate cooler effectively serves the DNA content of the microbiome. Two cryopreservation methods were compared with control samples, and the results indicate successful cryopreservation using metabarcoding of 16S and ITS rRNA. Enrichment with liquid medium showed similar responses between cryopreserved and non-cryopreserved soil samples, supporting the efficacy of cryopreservation. This study represents the first report of cryopreservation of soil using a Stirling cycle cooling approach, highlighting its potential for future microbiome research.
+
+### Load the required packages
+
+```{r install, warning=FALSE, message=FALSE}
+# install.packages(c("ggplot2", "ggpubr", "dplyr", "rstatix", "purrr"))
+library("ggplot2")
+library("ggpubr")
+library("dplyr")
+library("rstatix")
+library("purrr")
+library("reshape2")
+
+# if (!require("BiocManager", quietly = TRUE))
+#     install.packages("BiocManager")
+# BiocManager::install(c("phyloseq", "DESeq2"))
+library("phyloseq")
+library("DESeq2")
+
+# if(!requireNamespace("devtools", quietly = TRUE)){install.packages("devtools")}
+# devtools::install_github("jbisanz/qiime2R") # current version is 0.99.20
+library("qiime2R")
+
+# devtools::install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+library("pairwiseAdonis")
+```
+
+### Qiime2 to Phyloseq
+
+To work with QIIME2 outcomes in the R environment, it is beneficial to convert the data into the phyloseq object structure. This process involves importing and transforming the feature table and sample metadata, allowing for comprehensive analysis and visualization of microbial community profiles. The phyloseq package in R provides functions to organize and manipulate the data within the phyloseq object, enabling various analyses such as diversity assessments, differential abundance testing, and taxonomic profile visualization. By converting QIIME2 outcomes to phyloseq, researchers can leverage the capabilities of R for advanced statistical analysis, integration with other omics data, and gaining deeper insights into the microbiome datasets.
+
+```{r step 0, echo=FALSE}
+# Convert qiime2 to phyloseq format
+physeq <- qza_to_phyloseq(
+  features = "qiime2/table-its-with-phyla-no-mitochondria-no-chloroplast.qza", # table.qza
+  # tree = "inst/artifacts/2020.2_moving-pictures/rooted-tree.qza",
+  taxonomy = "qiime2/taxonomy-its.qza",
+  metadata = "meta-data-ITS.txt"
+)
+physeq ## confirm the object
+```
+
+### import data and subgroup the data
+
+Normalise number of reads in each sample by using median sequencing depth
+
+```{r pressure, echo=FALSE}
+## Normalise number of reads in each sample by using median sequencing depth
+total = median(sample_sums(physeq))
+standf = function(x, t=total) round(t * (x / sum(x)))
+physeq.norm = transform_sample_counts(physeq, standf)
+
+physeq.norm.group = merge_samples(physeq.norm, "Group") # Sum between replicate samples
+sample_data(physeq.norm.group)$Group <- rownames(sample_data(physeq.norm.group))
+```
+
+### Beta diversity
+
+Beta diversity is a measure used in ecological and microbial community studies to assess the dissimilarity of species or taxa compositions between different samples. It quantifies the variation in community structure and helps researchers understand the diversity and uniqueness of microbial communities. Various metrics, such as Bray-Curtis dissimilarity and Jaccard index, are employed to calculate beta diversity values, which can be visualized using techniques like Principal Coordinate Analysis or Non-Metric Multidimensional Scaling. Beta diversity analysis allows for comparisons of microbial communities across habitats, treatments, or environmental gradients, revealing factors influencing community variation and identifying key drivers of community structure. It provides insights into the functional and ecological significance of different microbial assemblages and their responses to environmental changes, aiding our understanding of microbial community dynamics and their roles in ecology, environmental science, and human health research.
+
+```{r two, echo=FALSE}
+nmds <- ordinate(physeq = physeq.norm, method = "NMDS", distance = "bray")
+
+plot_ordination(
+  physeq = physeq.norm,
+  ordination = nmds,
+  # title = "NMDS",
+  color = "Group",
+  shape = "Group") +
+  # scale_x_discrete(name ="NMDS1 ()") + 
+  # scale_y_discrete(name ="NMDS2 ()") + 
+  theme_classic() + 
+  geom_point(aes(color = Group), alpha = 1, size = 4) +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.1),
+        axis.line = element_line(colour = 'black', size = 1.1),
+        axis.text.x = element_text(colour = "black", angle=0, 
+                                   hjust=0.5, size = 13, face="bold"),
+        axis.text.y = element_text(colour = "black", angle=0, 
+                                   hjust=0.5, size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=20,face="bold"), 
+        axis.title.x = element_text(color="black", size=20,face="bold")) +
+  stat_ellipse(geom = "polygon", type="norm", alpha=0.25, aes(fill = Group)) + # polygon, path, point
+       scale_color_brewer(palette="Set2") +
+       scale_fill_brewer(palette="Set2")
+
+```
+
+### Alpha diversity
+
+Alpha diversity is a fundamental concept in ecology and refers to the diversity or richness of species within a specific community or habitat. In the context of microbial ecology, alpha diversity represents the diversity of microorganisms within a given sample or microbiome. It provides insights into the variety and evenness of microbial species present in a particular environment. Common measures of alpha diversity include species richness, which counts the number of unique species, and evenness, which assesses the distribution of species abundances. Alpha diversity is crucial for understanding the stability, resilience, and functional potential of microbial communities. It can be influenced by various factors, including environmental conditions, host factors, and perturbations. By comparing alpha diversity across different samples or experimental groups, researchers can gain insights into the impact of factors such as disease, habitat changes, or interventions on microbial community structure.
+
+```{r forth, echo=FALSE}
+# available measurements [c("Observed", "Chao1", "ACE", "Shannon", "Simpson", "InvSimpson", "Fisher")]
+tab = cbind(x = sample_data(physeq.norm), 
+            y = estimate_richness(physeq.norm, measures = 'Fisher'))
+
+stat.test <- tab %>%
+  # group_by(Neutrophils, GROUP1) %>%
+  t_test(Fisher ~ x.Group) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+
+ggplot(data = tab, aes(x = x.Group, y = Fisher, color = x.Group, fill = x.Group)) + 
+  theme_classic() + 
+  labs(# title = "IBD Patients", 
+    x = element_blank(), 
+    y = "Alpha Diversity (Fisher)") + 
+  geom_point(size = 1.75) + 
+  geom_boxplot(alpha = 0.5) + 
+  stat_pvalue_manual(stat.test, 
+                     y.position = c(245, 260, 280),
+                     label = "p.adj.signif",
+                     face="bold", 
+                     size = 6, 
+                     linetype = 1,
+                     tip.length = 0.02,
+                     inherit.aes = FALSE) + 
+  scale_y_continuous(limits=c(0 , 285), breaks = c(0, 50, 100, 150, 200, 250)) +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.1),
+        axis.line = element_line(colour = 'black', size = 1.1),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Dark2")+
+  scale_fill_brewer(palette="Dark2")
+```
+
+#### Determine the count of taxa within each level and group
+
+The purpose of this process is to visualise the distribution of the number of matched abundance across different groups and to identify any patterns in the distribution of the processed abundance within individual group.
+
+
+```{r physeq.norm.ori.group, warning=FALSE, message=FALSE}
+# Create an empty list to store genus-level abundance data for each taxonomic level
+gentab_levels <- list()
+
+# Set observation threshold
+observationThreshold <- 1
+
+# Define the taxonomic levels
+genus_levels <- c("Kingdom", "Phylum", "Class", "Order", 
+                  "Family", "Genus", "Species")
+
+# loop through all the taxonomic levels
+for (level in genus_levels) {
+  
+  # create a factor variable for each level
+  genfac <- factor(tax_table(physeq.norm.group)[, level])
+  
+  # calculate the abundance of each genus within each sample
+  gentab <- apply(otu_table(physeq.norm.group), MARGIN = 1, function(x) {
+    tapply(x, INDEX = genfac, FUN = sum, na.rm = TRUE, simplify = TRUE)
+  })
+  
+  # calculate the number of samples in which each genus is observed above the threshold
+  level_counts <- apply(gentab > observationThreshold, 2, sum)
+  
+  # create a data frame of level counts with genus names as row names
+  BB <- as.data.frame(level_counts)
+  BB$name <- row.names(BB)
+  
+  # add the data frame to the gentab_levels list
+  gentab_levels[[level]] <- BB
+}
+
+# Combine all level counts data frames into one data frame
+B2 <- gentab_levels %>% purrr::reduce(dplyr::full_join, by = "name")
+
+# Set row names and column names
+rownames(B2) <- B2$name
+B2$name <- NULL
+colnames(B2)[1:7] <- genus_levels
+B2$name <- rownames(B2)
+
+# Print the resulting data frame
+print(B2)
+
+# Clean up by removing unnecessary objects
+rm(gentab_levels, BB)
+
+data_long <- melt(B2, id.vars = "name", variable.name = "Dataset", value.name = "Count")
+colnames(data_long) = c("Method","Taxonomic.Level","Count")
+
+
+ggplot(data_long, aes(x = Taxonomic.Level, y = Count, color = Method, group = Method)) +
+  geom_line(size = 2) +
+  geom_point(size = 4) +
+  labs(x = "Taxonomic Level", y = "Count", color = "Method") +
+  theme_classic() + 
+  theme(
+    text = element_text(size = 19, colour = "black"), 
+    axis.ticks = element_line(colour = "black", size = 1.1),
+    axis.line = element_line(colour = 'black', size = 1.1),
+    axis.text.x = element_text(colour = "black", angle = 0, hjust = 0.5, size = 13, face = "bold"),
+    axis.text.y = element_text(colour = "black", angle = 0, hjust = 0.5, size = 13, face = "bold"),
+    axis.title.y = element_text(color = "black", size = 14, face = "bold"), 
+    axis.title.x = element_text(color = "black", size = 14, face = "bold"),
+    legend.title = element_text(size = 13.5, face = "bold"),
+    legend.text = element_text(size = 12),
+    legend.key.size=unit(0.4,"cm")
+  ) +
+  scale_x_discrete(guide = guide_axis(n.dodge=2)) +
+  scale_y_continuous(breaks=seq(0,600,by=100))
+
+```
+
+### Pairwise comparison using PERMANOVA
+
+Pairwise comparison using PERMANOVA (Permutational Multivariate Analysis of Variance) is a statistical method commonly used in ecological and microbial community studies to examine differences between multiple groups or treatments. It assesses the dissimilarity or distance matrix between samples, allowing for the comparison of multivariate data, such as microbial community composition. By testing the null hypothesis of no difference among groups, PERMANOVA provides a p-value that indicates the significance of observed differences.
+
+This approach is particularly useful when researchers want to focus on specific group comparisons of interest rather than comparing all groups simultaneously. Pairwise PERMANOVA enables the investigation of the effects of specific treatments or factors on microbial communities. It helps determine if there are significant differences in community composition between selected groups, shedding light on the influence of particular variables on microbial diversity. By considering variation within and between groups, pairwise PERMANOVA offers a robust statistical assessment of dissimilarity, accounting for potential confounding factors and providing insights into community structure differences.
+
+In summary, pairwise comparison using PERMANOVA is a powerful statistical tool for analyzing microbial community data. It allows researchers to conduct targeted comparisons, revealing significant dissimilarities between groups and aiding in the understanding of the factors driving variations in community composition. By employing this method, valuable insights into microbial community dynamics and functioning can be gained, contributing to our understanding of the complex interactions within ecosystems.
+
+```{r fifth, echo=FALSE}
+metdat = as.data.frame(as.matrix(physeq.norm@sam_data))
+dat = as.data.frame(t(as.data.frame(physeq.norm@otu_table)))
+pairwise.adonis(dat, metdat$Group, sim.function = "vegdist",
+                sim.method = "bray", p.adjust.m = "bonferroni",
+                reduce = NULL, perm = 100000)
+```
+
+### Comparisons using DESeq2 and visualise the differences
+
+DESeq2 is a widely used tool for performing differential abundance analysis on 16S data. It enables comparisons between different experimental conditions, such as treatment groups or time points, to identify taxa that show significant differences in abundance. By utilizing statistical models and accounting for inherent variability in the data, DESeq2 allows for accurate detection of differentially abundant taxa while controlling for false positives. This approach provides valuable insights into the microbial composition and dynamics within different sample groups, helping researchers understand the impact of various factors on the microbiome. DESeq2 offers a robust framework for exploring the differential abundance of 16S data, facilitating the identification of key microbial taxa associated with specific conditions or experimental variables.
+
+```{r sixth, echo=FALSE}
+# Create an empty data frame to store the results
+result_df <- data.frame(Comparison = character(), Group = character(), Lost = integer())
+
+# Define the combinations of groups to remove
+combinations <- list(
+  list(Comparison = "Control vs Plunge", Group = "Plunge", Other_Group = "Control"),
+  list(Comparison = "Plunge vs Rate", Group = "Rate", Other_Group = "Plunge"),
+  list(Comparison = "Control vs Rate", Group = "Rate", Other_Group = "Control")
+)
+
+# Iterate over each combination
+for (i in 1:length(combinations)) {
+  comp <- combinations[[i]]
+  
+  # Subset the samples
+  physeq.norm.cp <- subset_samples(physeq.norm, (Group %in% c(comp$Group, comp$Other_Group)))
+  
+  # Run DESeq2 analysis
+  diagdds <- phyloseq_to_deseq2(physeq.norm.cp, ~ Group)
+  diagdds <- DESeq(diagdds, test = "Wald", fitType = "parametric")
+  res <- results(diagdds, cooksCutoff = FALSE)
+  sigtab <- cbind(as(res, "data.frame"), as(tax_table(physeq.norm.cp)[rownames(res), ], "matrix"))
+  
+  # Filter for significant features
+  List2 <- filter(sigtab, padj < 0.05 & log2FoldChange < -1)
+  List2.num <- nrow(List2)
+  List3 <- filter(sigtab, padj < 0.05 & log2FoldChange > 1)
+  List3.num <- nrow(List3)
+  
+  # Add the results to the main data frame
+  result_df <- rbind(result_df,
+                     data.frame(Comparison = comp$Comparison, Group = comp$Group, Lost = List2.num),
+                     data.frame(Comparison = comp$Comparison, Group = comp$Other_Group, Lost = List3.num)
+  )
+}
+
+# Print the final result data frame
+print(result_df)
+```
+
+### visualise the differential ASVs 
+```{r 11, echo=FALSE}
+ggplot(result_df, aes(x = factor(Comparison), y = Lost, fill = Group, colour = Group)) + 
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.5)  +
+  # geom_errorbar(aes(ymin=target, ymax=target), position = position_dodge(0.9), width = 0.25,
+  #               show.legend = FALSE) +
+  labs(x="Comparsion", y="Number of Taxa") +
+  theme_bw() + 
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.1),
+        axis.line = element_line(colour = 'black', size = 1.1),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        axis.title.x = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_y_continuous(limits=c(0, 125), breaks = c(0, 25, 50, 75, 125)) +
+  geom_text(aes(label=Group, y = 3), 
+            position = position_dodge(0.90), 
+            show.legend = FALSE) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2")
+```
+
+### Top 10 samples
+
+```{r ninth, echo=FALSE}
+# Merge reads by groups
+AyBCode <- merge_samples(physeq, "Group", fun = sum)
+
+## Normalised number of reads in percentage
+standf = function(x) x / sum(x) * 100
+AyBCode.percent = transform_sample_counts(AyBCode, standf)
+
+top10otus = names(sort(taxa_sums(AyBCode.percent), TRUE)[1:15])
+taxtab10 = cbind(tax_table(AyBCode.percent), Family = NA)
+taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent)[top10otus, "Family"],"character")
+tax_table(AyBCode.percent) <- tax_table(taxtab10)
+
+top10plot = prune_taxa(top10otus, AyBCode.percent)
+top10plot
+title = "The 10 most abundant taxa (ITS)"
+
+plot_bar(top10plot, fill = "Family") + coord_flip() + 
+  ylab("Taxa Matched with UNITE (%)") + ylim(0, 50) + 
+  theme_classic() + 
+  theme(text = element_text(size=14, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.1),
+        axis.line = element_line(colour = 'black', size = 1.1),
+        axis.text.x = element_text(colour = "black", angle=0, size = 11, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black", size = 11, face="bold"),
+        axis.title.y = element_text(color="black", size=12,face="bold"),
+        axis.title.x = element_text(color="black", size=12,face="bold"),
+        legend.position = "right") +
+  scale_color_brewer(palette="Spectral")+
+  scale_fill_brewer(palette="Spectral")
+```
+
+
