@@ -33,21 +33,28 @@ ls -d "$PWD"/* > manifest.txt
 ## Step 4: Pack the paired-end data
 This step involves importing the paired-end sequencing data into QIIME 2. The `qiime tools import` command is used for this purpose. The `--type 'SampleData[PairedEndSequencesWithQuality]'` option specifies the type of data being imported. The `--input-path manifest.csv` option specifies the path to the manifest file created in the previous step. The `--output-path demux` option specifies the output directory where the imported data will be stored. The `--input-format PairedEndFastqManifestPhred33` option specifies the format of the input data.
 ```bash
-qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' --input-path manifest.csv --output-path demux --input-format PairedEndFastqManifestPhred33
-
+qiime tools import \
+  --type 'SampleData[PairedEndSequencesWithQuality]' \
+  --input-path manifest.csv \
+  --output-path demux \
+  --input-format PairedEndFastqManifestPhred33
 ```
 
 ## Step 5: Sequences quality visualisation (before the trimming)
 This step involves visualizing the quality of the imported sequences before trimming. The `qiime demux summarize` command is used for this purpose. The `--i-data demux.qza` option specifies the input data, and the `--o-visualization demux` option specifies the output visualization.
 ```bash
-qiime demux summarize --i-data demux.qza --o-visualization demux
+qiime demux summarize \
+  --i-data demux.qza \
+  --o-visualization demux
 ```
 
 ## Step 6: Denoise Paired Sequences
 
 This step involves denoising the paired-end sequences using DADA2, a pipeline for detecting and correcting (or removing) Illumina amplicon sequence data. The `qiime dada2 denoise-paired` command is used for this purpose.
 
-This step is performed on 2023-06-02 using 430bp, 254-17 = 237, 234 - 21 = 213.
+This step is performed using 430bp, and the parameter was estimated using FIGARO.
+The calculations are as follows:
+254-17 = 237, 234 - 21 = 213
 
 ```bash
 qiime dada2 denoise-paired \
@@ -62,7 +69,6 @@ qiime dada2 denoise-paired \
   --o-representative-sequences 430_327_213_rep-seqs.qza \
   --o-table 430_327_213_table.qza \
   --o-denoising-stats 430_327_213_stats.qza
-
 ```
 
 ## Step 7: Classify Sequences with Silva Classifier
@@ -73,7 +79,6 @@ qiime feature-classifier classify-sklearn \
   --i-reads 430_327_213_rep-seqs.qza \
   --p-n-jobs 4 \
   --o-classification 430_327_213_taxonomy.qza
-
 ```
 
 ## Step 8: Tabulate Metadata
@@ -82,7 +87,6 @@ This step involves tabulating metadata for easy visualization. The `qiime metada
 qiime metadata tabulate \
   --m-input-file 430_327_213_taxonomy.qza \
   --o-visualization 430_327_213_taxonomy.qzv
-
 ```
 
 ## Step 9: Taxonomy-based Filtering of Tables and Sequences
@@ -94,7 +98,8 @@ qiime taxa filter-table \
   --p-include p__ \
   --p-exclude mitochondria,chloroplast \
   --o-filtered-table 430_327_213_table-with-phyla-no-mitochondria-no-chloroplast.qza
- ```
+```
+
 ```
 qiime taxa filter-seqs \
 --i-sequences 430_327_213_rep-seqs.qza \

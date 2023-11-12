@@ -31,25 +31,39 @@ ls -d "$PWD"/* > manifest.txt
 ## Step 4: Pack the paired-end data
 This step involves importing the paired-end sequencing data into QIIME 2. The `qiime tools import` command is used for this purpose. The `--type 'SampleData[PairedEndSequencesWithQuality]'` option specifies the type of data being imported. The `--input-path manifest.csv` option specifies the path to the manifest file created in the previous step. The `--output-path demux` option specifies the output directory where the imported data will be stored. The `--input-format PairedEndFastqManifestPhred33` option specifies the format of the input data.
 ```bash
-qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' --input-path manifest.csv --output-path demux --input-format PairedEndFastqManifestPhred33
+qiime tools import \
+  --type 'SampleData[PairedEndSequencesWithQuality]' \
+  --input-path manifest.csv \
+  --output-path demux \
+  --input-format PairedEndFastqManifestPhred33
 ```
 
 ## Step 5: Sequences quality visualisation (before the trimming)
 This step involves visualizing the quality of the imported sequences before trimming. The `qiime demux summarize` command is used for this purpose. The `--i-data demux.qza` option specifies the input data, and the `--o-visualization demux` option specifies the output visualization.
 ```bash
-qiime demux summarize --i-data demux.qza --o-visualization demux
+qiime demux summarize \
+  --i-data demux.qza \
+  --o-visualization demux
 ```
 
 ## Step 6: Cutadapt for the adaptors and primers
 This step involves trimming adaptors and primers from sequences using Cutadapt, a tool designed to clean biological sequences, especially high-throughput sequencing reads. This removes unwanted biases in your data before downstream analysis.
 ```bash
-qiime cutadapt trim-paired --i-demultiplexed-sequences demux.qza --p-front-f TCGTCGGCAGCGTCAGATGTGTATAAGAGACAGGAACCWGCGGARGGATCA --p-front-r GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAGGCTGCGTTCTTCATCGATGC --p-error-rate 0 --o-trimmed-sequences trimmed-demux.qza --verbose > primer_trimming.log
+qiime cutadapt trim-paired \
+  --i-demultiplexed-sequences demux.qza \
+  --p-front-f TCGTCGGCAGCGTCAGATGTGTATAAGAGACAGGAACCWGCGGARGGATCA \
+  --p-front-r GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAGGCTGCGTTCTTCATCGATGC \
+  --p-error-rate 0 \
+  --o-trimmed-sequences trimmed-demux.qza \
+  --verbose > primer_trimming.log
 ```
 
 ## Step 7: Sequences quality visualisation (after the trimming)
 This step involves visualizing sequence quality after trimming adaptors and primers. This allows you to check if trimming was successful and if further preprocessing steps are necessary.
 ```bash
-qiime demux summarize --i-data trimmed-demux.qza --o-visualization trimmed-demux
+qiime demux summarize \
+  --i-data trimmed-demux.qza \
+  --o-visualization trimmed-demux
 ```
 
 ## Step 8: Denoise Paired Sequences

@@ -22,6 +22,8 @@ The soil used for this project
 
 04-[(Document-qiime2) qiime2 outcomes](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/16s/qiime2)
 
+05-[(Document-figaro) qiime2 outcomes](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/16s/figaro)
+
 #### ITS Sequencing data
 00-[(TXT) - Metadata](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/meta-data-ITS.txt)
 
@@ -34,6 +36,8 @@ The soil used for this project
 03-[(Document-zip) QC in multiqc file format](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/multiqc/multiqc.zip)
 
 04-[(Document-qiime2) qiime2 outcomes](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/qiime2)
+
+05-[(Document-figaro) qiime2 outcomes](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/figaro)
 
 ####  Information
 The preprint is available at https://agrirxiv.org/search-details/?pan=20210277652
