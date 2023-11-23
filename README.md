@@ -4,9 +4,13 @@
 ### Introduction
 Various institutions store collections of soil samples in either a refrigerated or sometimes frozen state. However, these conditions are not optimised to maintain the integrity of the soil microbiome. In this study, we explore cryopreservation using a controlled rate cooler and assess the genomic content of a representative soil sample before and after cryopreservation. We applied and compared two cryopreservation methods with control soil aliquots. Optimising the cryopreservation of soil samples is crucial for advancing microbiome research, as it helps preserve stable and functionally intact microbiomes.
 
-The soil used for this project
+The soil used for this project:
+```xml
+<img src="https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/soil.jpg" alt="soil texture" width="768" height="444"/>
+```
 ![soil texture](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/soil.jpg =100x40)
 
+The study workflow:
 ```mermaid
 graph LR
 A[Soil] 
@@ -19,7 +23,7 @@ A[Soil]
     E -->F[DNA extraction]
     F -->G[Sequencing]
 ```
-* The condition for the recovery was 37 degree celsius for 5 minutes
+*The condition used for the recovery was 37°C for 5 minutes
 
 
 ### Table of contents
