@@ -1,31 +1,31 @@
-sample-id	Label	Group	Comparison	Group2
-#q2:types	categorical	categorical	categorical	categorical
-ERR6375874	1C	Control	Original	Original.Control
-ERR6375957	2C	Control	Original	Original.Control
-ERR6375997	3C	Control	Original	Original.Control
-ERR6376032	5C	Control	Original	Original.Control
-ERR6376063	1P	Plunge	Original	Original.Plunge
-ERR6376114	2P	Plunge	Original	Original.Plunge
-ERR6376145	3P	Plunge	Original	Original.Plunge
-ERR6376173	4P	Plunge	Original	Original.Plunge
-ERR6376240	5P	Plunge	Original	Original.Plunge
-ERR6376291	1R	Rate	Original	Original.Rate
-ERR6376334	2R	Rate	Original	Original.Rate
-ERR6376495	3R	Rate	Original	Original.Rate
-ERR6376576	4R	Rate	Original	Original.Rate
-ERR6376581	5R	Rate	Original	Original.Rate
-ERR6376586	1CE	Control 	Enriched	Enriched.Control 
-ERR6376591	2CE	Control 	Enriched	Enriched.Control 
-ERR6376592	3CE	Control 	Enriched	Enriched.Control 
-ERR6376812	4CE	Control 	Enriched	Enriched.Control 
-ERR6376813	5CE	Control 	Enriched	Enriched.Control 
-ERR6376814	1PE	Plunge 	Enriched	Enriched.Plunge 
-ERR6376815	2PE	Plunge 	Enriched	Enriched.Plunge 
-ERR6377043	3PE	Plunge 	Enriched	Enriched.Plunge 
-ERR6377045	4PE	Plunge 	Enriched	Enriched.Plunge 
-ERR6377046	5PE	Plunge 	Enriched	Enriched.Plunge 
-ERR6377048	1RE	Rate 	Enriched	Enriched.Rate 
-ERR6377049	2RE	Rate 	Enriched	Enriched.Rate 
-ERR6377050	3RE	Rate 	Enriched	Enriched.Rate 
-ERR6377051	4RE	Rate 	Enriched	Enriched.Rate 
-ERR6377052	5RE	Rate 	Enriched	Enriched.Rate 
+sample-id	Label	Group	Comparison
+#q2:types	categorical	categorical	categorical
+ERR6375874	1C	Control	Direct
+ERR6375957	2C	Control	Direct
+ERR6375997	3C	Control	Direct
+ERR6376032	5C	Control	Direct
+ERR6376063	1P	Plunge	Direct
+ERR6376114	2P	Plunge	Direct
+ERR6376145	3P	Plunge	Direct
+ERR6376173	4P	Plunge	Direct
+ERR6376240	5P	Plunge	Direct
+ERR6376291	1R	Rate	Direct
+ERR6376334	2R	Rate	Direct
+ERR6376495	3R	Rate	Direct
+ERR6376576	4R	Rate	Direct
+ERR6376581	5R	Rate	Direct
+ERR6376586	1CE	Control 	Enriched
+ERR6376591	2CE	Control 	Enriched
+ERR6376592	3CE	Control 	Enriched
+ERR6376812	4CE	Control 	Enriched
+ERR6376813	5CE	Control 	Enriched
+ERR6376814	1PE	Plunge 	Enriched
+ERR6376815	2PE	Plunge 	Enriched
+ERR6377043	3PE	Plunge 	Enriched
+ERR6377045	4PE	Plunge 	Enriched
+ERR6377046	5PE	Plunge 	Enriched
+ERR6377048	1RE	Rate 	Enriched
+ERR6377049	2RE	Rate 	Enriched
+ERR6377050	3RE	Rate 	Enriched
+ERR6377051	4RE	Rate 	Enriched
+ERR6377052	5RE	Rate 	Enriched

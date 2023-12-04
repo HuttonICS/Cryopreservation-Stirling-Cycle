@@ -1,32 +1,46 @@
 ---
 title: Cryopreservation of a soil microbiome using a Stirling Cycle approach – a genomic (16s data)
   assessment
+author: Payton Yau
+date: 2023-11-03
 output:
-  pdf_document: default
-  html_document: default
-date: "2023-11-01"
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
 ---
 
 ## Cyropreserve CABI
 
-Soil microbiomes are responsive to seasonal and long-term environmental factors, impacting their composition and function. This manuscript explores cryopreservation techniques using a controlled rate cooler and assesses the genomic integrity and bacterial growth of an exemplar soil sample before and after cryopreservation. The study demonstrates that the controlled rate cooler effectively preserves the DNA content of the microbiome. Two cryopreservation methods were compared with control samples, and the results indicate successful cryopreservation using metabarcoding of 16S and ITS rRNA. Enrichment with liquid medium showed similar responses between cryopreserved and non-cryopreserved soil samples, supporting the efficacy of cryopreservation. This study represents the first report of cryopreservation of soil using a Stirling cycle cooling approach, highlighting its potential for future microbiome research.
+Soil microbiomes are responsive to seasonal and long-term environmental factors, impacting their composition and function. This manuscript explores cryopreservation techniques using a controlled rate cooler and assesses the genomic integrity and bacterial growth of an exemplar soil sample before and after cryopreservation. The study demonstrates that the controlled rate cooler effectively preserves the DNA content of the microbiome. Two cryopreservation methods were compared with control samples, and the results indicate successful cryopreservation using metabarcoding. Enrichment with liquid medium showed similar responses between cryopreserved and non-cryopreserved soil samples, supporting the efficacy of cryopreservation. This study represents the first report of cryopreservation of soil using a Stirling cycle cooling approach, highlighting its potential for future microbiome research.
 
 ### Load the required packages
 
 ```{r install, warning=FALSE, message=FALSE}
-# install.packages(c("ggplot2", "ggpubr", "dplyr", "rstatix", "purrr"))
+# install.packages(c("ggplot2", "ggpubr", "dplyr", 
+#                   "rstatix", "purrr", "reshape2",
+#                   "UpSetR","plyr", "dplyr", "RColorBrewer"))
 library("ggplot2")
 library("ggpubr")
 library("dplyr")
 library("rstatix")
 library("purrr")
 library("reshape2")
+library("UpSetR")
+library("plyr")
+library("dplyr")
+library("RColorBrewer")
 
 # if (!require("BiocManager", quietly = TRUE))
 #     install.packages("BiocManager")
-# BiocManager::install(c("phyloseq", "DESeq2"))
+# BiocManager::install(c("phyloseq", "DESeq2", "microbiome"))
 library("phyloseq")
 library("DESeq2")
+library("microbiome")
 
 # if(!requireNamespace("devtools", quietly = TRUE)){install.packages("devtools")}
 # devtools::install_github("jbisanz/qiime2R") # current version is 0.99.20
@@ -48,6 +62,7 @@ physeq <- qza_to_phyloseq(
   taxonomy = "qiime2/430_327_213_taxonomy.qza",
   metadata = "16s-meta-data.txt"
 )
+
 physeq ## confirm the object
 ```
 
@@ -58,27 +73,55 @@ Normalising the number of reads in each sample is an important step in analysing
 ```{r pressure, , warning=FALSE, message=FALSE}
 ## Normalise number of reads in each sample by using median sequencing depth
 
-total <- median(sample_sums(physeq)) # Calculate the median sequencing depth
-standf <- function(x, t = total) round(t * (x / sum(x))) # Define a scaling function
-physeq.norm <- transform_sample_counts(physeq, standf) # Normalise the sample counts using the scaling function
+# Calculate the median sequencing depth
+total <- median(sample_sums(physeq)) 
+# Define a scaling function
+standf <- function(x, t = total) round(t * (x / sum(x)))
+# Normalise the sample counts using the scaling function
+physeq.norm <- transform_sample_counts(physeq, standf)
 
+# Clean up by removing objects that are no longer needed
+rm(total, standf)
 ```
 
 ### Sub-grouping
 
-Separate analysis is necessary for the Original and Enriched experiments since the data contained in each subset differs and requires distinct examination.
+Separate analysis is necessary for the Direct and Enriched experiments since the data contained in each subset differs and requires distinct examination.
 
 ```{r abc, warning=FALSE, message=FALSE}
-## Subgroup
-physeq.norm.ori <- subset_samples(physeq.norm, Comparison=="Original") 
+## Subgroup - Direct
+physeq.norm.ori <- subset_samples(physeq.norm, Comparison=="Direct") 
+# Get the column names of the sample_data
+colnames(sample_data(physeq.norm.ori))
+# Find the index of the "Group" column
+group_index <- which(colnames(sample_data(physeq.norm.ori)) == "Group")
+# Rename the "Group" column to "Direct"
+colnames(sample_data(physeq.norm.ori))[group_index] <- "Direct"
+# Copy the column information from "Direct" to "Group"
+sample_data(physeq.norm.ori)$Group <- sample_data(physeq.norm.ori)$Direct
+
+
+## Subgroup - Enriched
 physeq.norm.rich <- subset_samples(physeq.norm, Comparison=="Enriched") 
+# Get the column names of the sample_data
+colnames(sample_data(physeq.norm.rich))
+# Find the index of the "Group" column
+group_index <- which(colnames(sample_data(physeq.norm.rich)) == "Group")
+# Rename the "Group" column to "Direct"
+colnames(sample_data(physeq.norm.rich))[group_index] <- "Enriched"
+# Copy the column information from "Enriched" to "Group"
+sample_data(physeq.norm.rich)$Group <- sample_data(physeq.norm.rich)$Enriched
 
-## (3A) Merge the replicate samples for each Group
-physeq.norm.ori.group = merge_samples(physeq.norm.ori, "Group2") # Sum between replicate samples
-sample_data(physeq.norm.ori.group)$Group2 <- rownames(sample_data(physeq.norm.ori.group))
 
-physeq.norm.rich.group = merge_samples(physeq.norm.rich, "Group2") # Sum between replicate samples
-sample_data(physeq.norm.rich.group)$Group2 <- rownames(sample_data(physeq.norm.rich.group))
+## Merge the replicate samples for each Group
+physeq.norm.ori.group = merge_samples(physeq.norm.ori, "Direct") # Sum between replicate samples
+sample_data(physeq.norm.ori.group)$Direct <- rownames(sample_data(physeq.norm.ori.group))
+
+physeq.norm.rich.group = merge_samples(physeq.norm.rich, "Enriched") # Sum between replicate samples
+sample_data(physeq.norm.rich.group)$Enriched <- rownames(sample_data(physeq.norm.rich.group))
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.norm, group_index)
 ```
 
 ### Beta diversity 
@@ -86,19 +129,16 @@ sample_data(physeq.norm.rich.group)$Group2 <- rownames(sample_data(physeq.norm.r
 Beta diversity is a measure used in ecological and microbial community studies to assess the dissimilarity of species or taxa compositions between different samples. It quantifies the variation in community structure and helps researchers understand the diversity and uniqueness of microbial communities. Various metrics, such as Bray-Curtis dissimilarity and Jaccard index, are employed to calculate beta diversity values, which can be visualized using techniques like Principal Coordinate Analysis or Non-Metric Multidimensional Scaling. Beta diversity analysis allows for comparisons of microbial communities across habitats, treatments, or environmental gradients, revealing factors influencing community variation and identifying key drivers of community structure. It provides insights into the functional and ecological significance of different microbial assemblages and their responses to environmental changes, aiding our understanding of microbial community dynamics and their roles in ecology, environmental science, and human health research.
 
 ```{r two, , warning=FALSE, message=FALSE}
+## Beta diversity  - Direct
 nmds.ori <- ordinate(physeq = physeq.norm.ori, method = "NMDS", distance = "bray")
-nmds.rich <- ordinate(physeq = physeq.norm.rich, method = "NMDS", distance = "bray")
 
-plot_ordination(
+Beta.ori <- plot_ordination(
   physeq = physeq.norm.ori,
   ordination = nmds.ori,
-  # title = "NMDS",
-  color = "Group",
-  shape = "Group") +
-  # scale_x_discrete(name ="NMDS1 ()") + 
-  # scale_y_discrete(name ="NMDS2 ()") + 
+  color = "Direct",
+  shape = "Direct") +
   theme_classic() + 
-  geom_point(aes(color = Group), alpha = 1, size = 4) +
+  geom_point(aes(color = Direct), alpha = 1, size = 4) +
   theme(text = element_text(size=18, colour = "black"), 
         axis.ticks = element_line(colour = "black", size = 1.1),
         axis.line = element_line(colour = 'black', size = 1.1),
@@ -107,29 +147,50 @@ plot_ordination(
         axis.text.y = element_text(colour = "black", angle=0, 
                                    hjust=0.5, size = 13, face="bold"),
         axis.title.y = element_text(color="black", size=20,face="bold"), 
-        axis.title.x = element_text(color="black", size=20,face="bold")) +
-  stat_ellipse(geom = "polygon", type="norm", alpha=0.25, aes(fill = Group)) + # polygon, path, point
+        axis.title.x = element_text(color="black", size=20,face="bold"),
+        legend.position = "bottom") + # This line moves the legend to the bottom
+  stat_ellipse(geom = "polygon", type="norm", 
+               alpha=0.25, aes(fill = Direct)) + # polygon, path, point
   scale_color_brewer(palette="Set2")+
   scale_fill_brewer(palette="Set2")
 
-plot_ordination(
+
+# pdf(file = "Beta.ori.pdf", width = 6,height = 6.1)
+Beta.ori
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+
+## Beta diversity  - Enriched
+nmds.rich <- ordinate(physeq = physeq.norm.rich, method = "NMDS", distance = "bray")
+
+Beta.rich <- plot_ordination(
   physeq = physeq.norm.rich,
   ordination = nmds.rich,
-  # title = "PCoA",
-  color = "Group",
-  shape = "Group") +
+  color = "Enriched",
+  shape = "Enriched") +
   theme_classic() +
-  geom_point(aes(color = Group), alpha = 1, size = 4) +
+  geom_point(aes(color = Enriched), alpha = 1, size = 4) +
   theme(text = element_text(size=18, colour = "black"), 
         axis.ticks = element_line(colour = "black", size = 1.1),
         axis.line = element_line(colour = 'black', size = 1.1),
         axis.text.x = element_text(colour = "black", angle=0, hjust=0.5, size = 13, face="bold"),
         axis.text.y = element_text(colour = "black", angle=0, hjust=0.5, size = 13, face="bold"),
         axis.title.y = element_text(color="black", size=20,face="bold"), 
-        axis.title.x = element_text(color="black", size=20,face="bold")) +
-  stat_ellipse(geom = "polygon", type="norm", alpha=0.15, aes(fill=Group))+ 
+        axis.title.x = element_text(color="black", size=20,face="bold"),
+        legend.position = "bottom") + # This line moves the legend to the bottom
+  stat_ellipse(geom = "polygon", type="norm", alpha=0.15, aes(fill=Enriched))+ 
   scale_color_brewer(palette="Set1")+
   scale_fill_brewer(palette="Set1")
+
+
+# pdf(file = "Beta.rich.pdf", width = 6,height = 6.1)
+Beta.rich
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing objects that are no longer needed
+rm(nmds.ori, Beta.ori, nmds.rich, Beta.rich)
 ```
 
 ### Alpha diversity
@@ -137,20 +198,21 @@ plot_ordination(
 Alpha diversity is a fundamental concept in ecology and refers to the diversity or richness of species within a specific community or habitat. In the context of microbial ecology, alpha diversity represents the diversity of microorganisms within a given sample or microbiome. It provides insights into the variety and evenness of microbial species present in a particular environment. Common measures of alpha diversity include species richness, which counts the number of unique species, and evenness, which assesses the distribution of species abundances. Alpha diversity is crucial for understanding the stability, resilience, and functional potential of microbial communities. It can be influenced by various factors, including environmental conditions, host factors, and perturbations. By comparing alpha diversity across different samples or experimental groups, researchers can gain insights into the impact of factors such as disease, habitat changes, or interventions on microbial community structure.
 
 ```{r forth, , warning=FALSE, message=FALSE}
-par(mfrow=c(1,2)) 
-# original
+## Direct
 tab = cbind(x = sample_data(physeq.norm.ori), 
             y = estimate_richness(physeq.norm.ori, measures = 'Fisher'))
 
 stat.test <- tab %>%
-  # group_by(Neutrophils, GROUP1) %>%
-  t_test(Fisher ~ x.Group) %>%
+  t_test(Fisher ~ x.Direct) %>%
   adjust_pvalue(method = "bonferroni") %>%
   add_significance()
 
-ggplot(data = tab, aes(x = x.Group, y = Fisher, color = x.Group, fill = x.Group)) + 
+alpha.ori <- ggplot(data = tab, aes(x = x.Direct, 
+                                    y = Fisher, 
+                                    color = x.Direct, 
+                                    fill = x.Direct)) + 
   theme_classic() + 
-  labs(# title = "IBD Patients", 
+  labs(
     x = element_blank(), 
     y = "Alpha Diversity (Fisher)") + 
   geom_point(size = 1.75) + 
@@ -177,24 +239,33 @@ ggplot(data = tab, aes(x = x.Group, y = Fisher, color = x.Group, fill = x.Group)
   scale_color_brewer(palette="Set2")+
   scale_fill_brewer(palette="Set2")
 
-# Enriched
-tab = cbind(x = sample_data(physeq.norm.rich), 
+# pdf(file = "alpha.ori.pdf", width = 6, height = 5)
+alpha.ori
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+
+
+## Enriched
+tab1 = cbind(x = sample_data(physeq.norm.rich), 
             y = estimate_richness(physeq.norm.rich, measures = 'Fisher'))
 
-stat.test <- tab %>%
-  # group_by(Neutrophils, GROUP1) %>%
-  t_test(Fisher ~ x.Group) %>%
+stat.test1 <- tab1 %>%
+  t_test(Fisher ~ x.Enriched) %>%
   adjust_pvalue(method = "bonferroni") %>%
   add_significance()
 
-ggplot(data = tab, aes(x = x.Group, y = Fisher, color = x.Group, fill = x.Group)) + 
+alpha.rich <- ggplot(data = tab1, aes(x = x.Enriched, 
+                                      y = Fisher, 
+                                      color = x.Enriched, 
+                                      fill = x.Enriched)) + 
   theme_classic() + 
-  labs(# title = "IBD Patients", 
+  labs(
     x = element_blank(), 
     y = "Alpha Diversity (Fisher)") + 
   geom_point(size = 1.75) + 
   geom_boxplot(alpha = 0.5) + 
-  stat_pvalue_manual(stat.test, 
+  stat_pvalue_manual(stat.test1, 
                      y.position = c(70, 74.5, 80),
                      label = "p.adj.signif",
                      face="bold", 
@@ -215,6 +286,14 @@ ggplot(data = tab, aes(x = x.Group, y = Fisher, color = x.Group, fill = x.Group)
         legend.position = "none") +
   scale_color_brewer(palette="Set1")+
   scale_fill_brewer(palette="Set1")
+
+# pdf(file = "alpha.rich.pdf", width = 6, height = 5)
+alpha.rich
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing objects that are no longer needed
+rm(tab, stat.test, alpha.ori, tab1, stat.test1, alpha.rich)
 ```
 
 #### Determine the count of taxa within each level and group
@@ -239,15 +318,15 @@ for (level in genus_levels) {
   # create a factor variable for each level
   genfac <- factor(tax_table(physeq.norm.ori.group)[, level])
   
-  # calculate the abundance of each genus within each sample
+  # calculate the abundance of each level within each sample
   gentab <- apply(otu_table(physeq.norm.ori.group), MARGIN = 1, function(x) {
     tapply(x, INDEX = genfac, FUN = sum, na.rm = TRUE, simplify = TRUE)
   })
   
-  # calculate the number of samples in which each genus is observed above the threshold
+  # calculate the number of samples in which each level is observed above the threshold
   level_counts <- apply(gentab > observationThreshold, 2, sum)
   
-  # create a data frame of level counts with genus names as row names
+  # create a data frame of level counts with names as row names
   BB <- as.data.frame(level_counts)
   BB$name <- row.names(BB)
   
@@ -261,23 +340,24 @@ B2 <- gentab_levels %>% purrr::reduce(dplyr::full_join, by = "name")
 # Set row names and column names
 rownames(B2) <- B2$name
 B2$name <- NULL
-colnames(B2)[1:6] <- genus_levels
+colnames(B2)[1:7] <- genus_levels
 B2$name <- rownames(B2)
+B2$Species <- NULL
 
-# Print the resulting data frame
-print(B2)
+data_long <- melt(B2, id.vars = "name", 
+                  variable.name = "Dataset", 
+                  value.name = "Count")
 
-# Clean up by removing unnecessary objects
-rm(gentab_levels, BB)
-
-data_long <- melt(B2, id.vars = "name", variable.name = "Dataset", value.name = "Count")
-colnames(data_long) = c("Method","Taxonomic.Level","Count")
+colnames(data_long) = c("Direct","Taxonomic.Level","Count")
 
 
-ggplot(data_long, aes(x = Taxonomic.Level, y = Count, color = Method, group = Method)) +
+tax.ori <- ggplot(data_long, aes(x = Taxonomic.Level, 
+                                 y = Count, 
+                                 color = Direct, 
+                                 group = Direct)) +
   geom_line(size = 2) +
   geom_point(size = 4) +
-  labs(x = "Taxonomic Level", y = "Count", color = "Method") +
+  labs(x = "Taxonomic Level", y = "Count", color = "Direct") +
   theme_classic() + 
   theme(
     text = element_text(size = 19, colour = "black"), 
@@ -287,15 +367,22 @@ ggplot(data_long, aes(x = Taxonomic.Level, y = Count, color = Method, group = Me
     axis.text.y = element_text(colour = "black", angle = 0, hjust = 0.5, size = 13, face = "bold"),
     axis.title.y = element_text(color = "black", size = 14, face = "bold"), 
     axis.title.x = element_text(color = "black", size = 14, face = "bold"),
-    legend.title = element_text(size = 13.5, face = "bold"),
-    legend.text = element_text(size = 12),
-    legend.key.size=unit(0.4,"cm")
-  ) +
+    legend.position = "bottom") + # This line moves the legend to the bottom
+  scale_color_brewer(palette="Set2") +
   scale_x_discrete(guide = guide_axis(n.dodge=2)) +
   scale_y_continuous(breaks=seq(0,600,by=100))
 
-```
 
+# pdf(file = "tax.ori.pdf", width = 6, height = 6.1)
+tax.ori
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing unnecessary objects
+rm(gentab_levels, genus_levels, observationThreshold, 
+   BB, B2, data_long, gentab, tax.ori, genfac, level, level_counts)
+
+```
 
 ```{r physeq.norm.rich.group, warning=FALSE, message=FALSE}
 # Create an empty list to store genus-level abundance data for each taxonomic level
@@ -336,23 +423,21 @@ B2 <- gentab_levels %>% purrr::reduce(dplyr::full_join, by = "name")
 # Set row names and column names
 rownames(B2) <- B2$name
 B2$name <- NULL
-colnames(B2)[1:6] <- genus_levels
+colnames(B2)[1:7] <- genus_levels
+B2$Species <- NULL
 B2$name <- rownames(B2)
 
-# Print the resulting data frame
-print(B2)
-
-# Clean up by removing unnecessary objects
-rm(gentab_levels, BB)
-
 data_long <- melt(B2, id.vars = "name", variable.name = "Dataset", value.name = "Count")
-colnames(data_long) = c("Method","Taxonomic.Level","Count")
+colnames(data_long) = c("Enriched","Taxonomic.Level","Count")
 
 
-ggplot(data_long, aes(x = Taxonomic.Level, y = Count, color = Method, group = Method)) +
+tax.rich <- ggplot(data_long, aes(x = Taxonomic.Level, 
+                                  y = Count, 
+                                  color = Enriched, 
+                                  group = Enriched)) +
   geom_line(size = 2) +
   geom_point(size = 4) +
-  labs(x = "Taxonomic Level", y = "Count", color = "Method") +
+  labs(x = "Taxonomic Level", y = "Count", color = "Enriched") +
   theme_classic() + 
   theme(
     text = element_text(size = 19, colour = "black"), 
@@ -362,170 +447,206 @@ ggplot(data_long, aes(x = Taxonomic.Level, y = Count, color = Method, group = Me
     axis.text.y = element_text(colour = "black", angle = 0, hjust = 0.5, size = 13, face = "bold"),
     axis.title.y = element_text(color = "black", size = 14, face = "bold"), 
     axis.title.x = element_text(color = "black", size = 14, face = "bold"),
-    legend.title = element_text(size = 13.5, face = "bold"),
-    legend.text = element_text(size = 12),
-    legend.key.size=unit(0.4,"cm")
-  ) +
+    legend.position = "bottom") + # This line moves the legend to the bottom
+    scale_color_brewer(palette="Set1") +
   scale_x_discrete(guide = guide_axis(n.dodge=2)) +
-  scale_y_continuous(breaks=seq(0,150,by=50))
+  scale_y_continuous(breaks=seq(0,200,by=50))
 
+# pdf(file = "tax.rich.pdf", width = 6, height = 6.1)
+tax.rich
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing unnecessary objects
+rm(gentab_levels, genus_levels, observationThreshold, 
+   BB, B2, data_long, gentab, tax.rich, genfac, level, level_counts)
+
+```
+
+### Upset plot using UpsetR
+
+Venn diagrams are commonly used for visualizing sets, but they can become complex with more than five sets. UpSet graphs, on the other hand, offer a more efficient way to display intersections and complements, especially for larger or multiple datasets. They provide a more intuitive and informative data representation.
+
+```{r UpSetR1, warning=FALSE, message=FALSE}
+# Aggregate taxa at the genus level
+B <- aggregate_taxa(physeq.norm.ori.group, "Genus", verbose = TRUE)
+# Remove undesired genera
+# B2 <- subset_taxa(B, !get("Genus") %in% c("uncultured", "Unknown"))
+
+# Remove unwanted taxon names
+taxa_to_remove <- c("uncultured", "Unknown")
+B2 <- subset_taxa(B, !get("Genus") %in% taxa_to_remove)
+
+# Extract relevant data from the phyloseq object
+sample_data <- sample_data(B2)
+otu_table <- otu_table(B2)
+abundance <- as.vector(otu_table)
+
+# Create a tibble with the extracted data
+D <- tibble(
+  Sample = rep(sample_data$Direct, each = nrow(otu_table)),
+  ASV = rep(rownames(otu_table), times = ncol(otu_table)),
+  Abundance = abundance
+) %>%
+  group_by(Sample) %>%
+  mutate(rank = rank(plyr::desc(Abundance))) %>%
+   filter(Abundance > 0) %>%
+  ungroup() %>%
+  select(Sample, Abundance, ASV)
+
+# Remove the Abundance column
+D$Abundance <- NULL
+
+# Rename the second column to "ASV"
+names(D)[2] <- "ASV"
+names(D)[1] <- "Direct"
+
+# Convert data from long to wide format
+E <- dcast(D, ASV ~ Direct)
+
+# Define a binary function
+binary_fun <- function(x) {
+  x[is.na(x)] <- 0
+  ifelse(x > 0, 1, 0)
+}
+
+col = c("#FC8D62", "#8DA0CB","#66C2A5")
+
+# Apply the binary function to columns 2 to 4
+temp_df <- apply(E[2:4], 2, binary_fun)
+temp_df <- as.data.frame(temp_df)
+
+# Create an UpSet plot
+UpSet.Ori <- upset(temp_df, 
+                    sets = colnames(temp_df), 
+                    sets.bar.color = (col),
+                    order.by = "freq", 
+                    empty.intersections = "on",
+                    mainbar.y.label = "Counts by Pattern of Conditions", 
+                    sets.x.label = "Counts by Condition",
+                    matrix.color="blue", 
+                    mb.ratio = c(0.65, 0.35),
+                    point.size= 2.75,
+                    line.size = 1.25, 
+                    text.scale = 1.5
+)
+
+
+# Open a new PDF graphics device
+# pdf(file = "UpSet.Ori.pdf", width=6.5,height=4.5)
+
+# Print the UpSet plot
+print(UpSet.Ori)
+
+# Close the PDF device and save the plot to a file
+# dev.off()  
+```
+
+
+```{r UpSetR2, warning=FALSE, message=FALSE}
+# Aggregate taxa at the genus level
+B <- aggregate_taxa(physeq.norm.rich.group, "Genus", verbose = TRUE)
+# Remove undesired genera
+# B2 <- subset_taxa(B, !get("Genus") %in% c("uncultured", "Unknown"))
+
+# Remove unwanted taxon names
+taxa_to_remove <- c("uncultured", "Unknown")
+B2 <- subset_taxa(B, !get("Genus") %in% taxa_to_remove)
+
+# Extract relevant data from the phyloseq object
+sample_data <- sample_data(B2)
+otu_table <- otu_table(B2)
+abundance <- as.vector(otu_table)
+
+# Create a tibble with the extracted data
+D <- tibble(
+  Sample = rep(sample_data$Enriched, each = nrow(otu_table)),
+  ASV = rep(rownames(otu_table), times = ncol(otu_table)),
+  Abundance = abundance
+) %>%
+  group_by(Sample) %>%
+  mutate(rank = rank(plyr::desc(Abundance))) %>%
+   filter(Abundance > 0) %>%
+  ungroup() %>%
+  select(Sample, Abundance, ASV)
+
+# Remove the Abundance column
+D$Abundance <- NULL
+
+# Rename the second column to "ASV"
+names(D)[2] <- "ASV"
+names(D)[1] <- "Direct"
+
+# Convert data from long to wide format
+E <- dcast(D, ASV ~ Direct)
+
+# Define a binary function
+binary_fun <- function(x) {
+  x[is.na(x)] <- 0
+  ifelse(x > 0, 1, 0)
+}
+
+col = brewer.pal(n = 3, name = "Set1")
+
+# Apply the binary function to columns 2 to 4
+temp_df <- apply(E[2:4], 2, binary_fun)
+temp_df <- as.data.frame(temp_df)
+
+# Create an UpSet plot
+upset.Rich <- upset(temp_df, 
+                    sets = colnames(temp_df), 
+                    sets.bar.color = (col),
+                    order.by = "freq", 
+                    empty.intersections = "on",
+                    mainbar.y.label = "Counts by Pattern of Conditions", 
+                    sets.x.label = "Counts by Condition",
+                    matrix.color="blue", 
+                    mb.ratio = c(0.65, 0.35),
+                    point.size= 2.75,
+                    line.size = 1.25, 
+                    text.scale = 1.5
+)
+
+
+# Open a new PDF graphics device
+# pdf(file = "upset.Rich.pdf", width=6.5,height=4.5)
+
+# Print the UpSet plot
+print(upset.Rich)
+
+# Close the PDF device and save the plot to a file
+# dev.off()  
 ```
 ### Pairwise comparison using PERMANOVA
 
-Pairwise comparison using PERMANOVA (Permutational Multivariate Analysis of Variance) is a statistical method commonly used in ecological and microbial community studies to examine differences between multiple groups or treatments. It assesses the dissimilarity or distance matrix between samples, allowing for the comparison of multivariate data, such as microbial community composition. By testing the null hypothesis of no difference among groups, PERMANOVA provides a p-value that indicates the significance of observed differences.
-
-This approach is particularly useful when researchers want to focus on specific group comparisons of interest rather than comparing all groups simultaneously. Pairwise PERMANOVA enables the investigation of the effects of specific treatments or factors on microbial communities. It helps determine if there are significant differences in community composition between selected groups, shedding light on the influence of particular variables on microbial diversity. By considering variation within and between groups, pairwise PERMANOVA offers a robust statistical assessment of dissimilarity, accounting for potential confounding factors and providing insights into community structure differences.
+Pairwise PERMANOVA (Permutational Multivariate Analysis of Variance) is a statistical method used in microbial community studies to examine differences between groups or treatments. It assesses the dissimilarity between samples, allowing for the comparison of multivariate data. This approach is useful to focus on specific group comparisons rather than comparing all groups simultaneously. It enables the investigation of the effects of specific treatments on microbial communities, helping to determine if there are significant differences in community composition between selected groups. By considering variation within and between groups, pairwise PERMANOVA offers a robust statistical assessment of dissimilarity, providing insights into community structure differences.
 
 ```{r fifth, echo=FALSE}
-
 ## enriched data
 metdat.rich = as.data.frame(as.matrix(physeq.norm.rich@sam_data))
 dat.rich = as.data.frame(t(as.data.frame(physeq.norm.rich@otu_table)))
 pairwise.adonis(dat.rich, metdat.rich$Group, sim.function = "vegdist",
                 sim.method = "bray", p.adjust.m = "bonferroni",
                 reduce = NULL, perm = 100000)
-## original data
+
+## Direct data
 metdat.ori = as.data.frame(as.matrix(physeq.norm.ori@sam_data))
 dat.ori = as.data.frame(t(as.data.frame(physeq.norm.ori@otu_table)))
 pairwise.adonis(dat.ori, metdat.ori$Group, sim.function = "vegdist",
                 sim.method = "bray", p.adjust.m = "bonferroni",
                 reduce = NULL, perm = 100000)
 
+# Clean up by removing objects that are no longer needed
+rm(metdat.rich, dat.rich, metdat.ori, dat.ori)
 ```
 
-### Comparisons using DESeq2
+### Top 10 at family level
 
-DESeq2 is a popular tool for differential abundance analysis in 16S data. It compares different experimental conditions to identify significantly different taxa. By using statistical models and accounting for data variability, DESeq2 accurately detects differentially abundant taxa and controls false positives. This tool provides insights into microbial composition within sample groups and helps understand the microbiome's response to various factors. Thus, DESeq2 is a robust tool for identifying key microbial taxa associated with specific conditions.
-
-```{r sixth, , warning=FALSE, message=FALSE}
-## Subset the data
-# Create an empty data frame to store the results
-result_df <- data.frame(Comparison = character(), 
-                        Group = character(), 
-                        Type = character(), 
-                        Lost = integer())
-
-# Define the combinations of groups to remove and their corresponding types
-combinations <- list(
-  list(Comparison = "Control vs Plunge", Group = "Control", Remove_Group = "Rate"),
-  list(Comparison = "Plunge vs Rate", Group = "Plunge", Remove_Group = "Control"),
-  list(Comparison = "Control vs Rate", Group = "Control", Remove_Group = "Plunge")
-)
-
-# Define the types of data
-data_types <- list(
-  list(Type = "Enriched", Data = physeq.norm.rich),
-  list(Type = "Original", Data = physeq.norm.ori)
-)
-
-# Iterate over each data type
-for (i in 1:length(data_types)) {
-  data_type <- data_types[[i]]
-  data <- data_type$Data
-  
-  # Iterate over each combination
-  for (j in 1:length(combinations)) {
-    comp <- combinations[[j]]
-    
-    # Subset the samples
-    physeq.norm.cp <- subset_samples(data, !(Group %in% comp$Remove_Group))
-    
-    # Run DESeq2 analysis
-    diagdds <- phyloseq_to_deseq2(physeq.norm.cp, ~ Group)
-    diagdds <- DESeq(diagdds, test = "Wald", fitType = "parametric")
-    res <- results(diagdds, cooksCutoff = FALSE)
-    sigtab <- cbind(as(res, "data.frame"), as(tax_table(physeq.norm.cp)[rownames(res), ], "matrix"))
-    
-    # Filter for significant features
-    List2 <- filter(sigtab, padj < 0.05 & log2FoldChange < -1)
-    List2.num <- nrow(List2)
-    List3 <- filter(sigtab, padj < 0.05 & log2FoldChange > 1)
-    List3.num <- nrow(List3)
-    
-    # Add the results to the main data frame
-    result_df <- rbind(result_df,
-                       data.frame(
-                         Comparison = comp$Comparison,
-                         Group = comp$Group,
-                         Type = data_type$Type,
-                         Lost = List2.num
-                       ),
-                       data.frame(
-                         Comparison = comp$Comparison,
-                         Group = comp$Remove_Group,
-                         Type = data_type$Type,
-                         Lost = List3.num
-                       )
-    )
-  }
-}
-
-# Print the final result data frame
-print(result_df)
-```
-
-### visualise the differential ASVs 
-
-```{r ninth, , warning=FALSE, message=FALSE}
-Ori = subset(result_df, Type =="Original")
-Rich = subset(result_df, Type =="Enriched")
-
-### Original ###
-ggplot(Ori, aes(x = factor(Comparison), y = Lost, fill = Group, colour = Group)) + 
-  geom_bar(stat = "identity", position = "dodge", alpha = 0.5)  +
-  # geom_errorbar(aes(ymin=target, ymax=target), position = position_dodge(0.9), width = 0.25,
-  #               show.legend = FALSE) +
-  labs(x="Comparsion", y="Number of Differential Abundance") +
-  theme_bw() + 
-  theme(text = element_text(size=18, colour = "black"), 
-        axis.ticks = element_line(colour = "black", size = 1.1),
-        axis.line = element_line(colour = 'black', size = 1.1),
-        axis.text.x = element_text(colour = "black",
-                                   angle=0, 
-                                   size = 13, face="bold"),
-        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
-                                   size = 13, face="bold"),
-        axis.title.y = element_text(color="black", size=15,face="bold"),
-        axis.title.x = element_text(color="black", size=15,face="bold"),
-        legend.position = "none") +
-  scale_y_continuous(limits=c(0, 40), breaks = c(0, 20, 40)) +
-  geom_text(aes(label=Group, y = 3), 
-            position = position_dodge(0.90), 
-            show.legend = FALSE) +
-  scale_fill_brewer(palette = "Set2") +
-  scale_color_brewer(palette = "Set2")
-
-### Enriched ###
-ggplot(Rich, aes(x = factor(Comparison), y = Lost, fill = Group, colour = Group)) + 
-  geom_bar(stat = "identity", position = "dodge", alpha = 0.5)  +
-  # geom_errorbar(aes(ymin=target, ymax=target), position = position_dodge(0.9), width = 0.25,
-  #               show.legend = FALSE) +
-  labs(x="Comparsion", y="Number of Differential Abundance") +
-  theme_bw() + 
-  theme(text = element_text(size=18, colour = "black"), 
-        axis.ticks = element_line(colour = "black", size = 1.1),
-        axis.line = element_line(colour = 'black', size = 1.1),
-        axis.text.x = element_text(colour = "black",
-                                   angle=0, 
-                                   size = 13, face="bold"),
-        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
-                                   size = 13, face="bold"),
-        axis.title.y = element_text(color="black", size=15,face="bold"),
-        axis.title.x = element_text(color="black", size=15,face="bold"),
-        legend.position = "none") +
-  scale_y_continuous(limits=c(0, 40), breaks = c(0, 20, 40)) +
-  geom_text(aes(label=Group, y = 3), 
-            position = position_dodge(0.90), 
-            show.legend = FALSE) +
-  scale_fill_brewer(palette = "Set1") +
-  scale_color_brewer(palette = "Set1")
-```
-
-### Top 10 samples
+In microbiome analysis, identifying the top 10 bacteria in the top 10 family level and their corresponding percentages provides a snapshot of the microbial community’s composition. 
 
 ```{r TOP10, warning=FALSE, message=FALSE}
-# Merge reads by groups (Original)
-physeq.ori <- subset_samples(physeq, Comparison=="Original") 
+# Merge reads by groups (Direct)
+physeq.ori <- subset_samples(physeq, Comparison=="Direct") 
 AyBCode <- merge_samples(physeq.ori, "Group", fun = sum)
 
 ## Normalised number of reads in percentage
@@ -538,10 +659,8 @@ taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent)[top10otus, "Famil
 tax_table(AyBCode.percent) <- tax_table(taxtab10)
 
 top10plot = prune_taxa(top10otus, AyBCode.percent)
-top10plot
-title = "The 10 most abundant taxa (16s - Original)"
 
-plot_bar(top10plot, fill = "Family") + coord_flip() + 
+top10.ori <- plot_bar(top10plot, fill = "Family") + coord_flip() + 
   ylab("Taxa Matched with Silva138 (%)") + ylim(0, 20) + 
   theme_classic() + 
   theme(text = element_text(size=14, colour = "black"), 
@@ -553,8 +672,14 @@ plot_bar(top10plot, fill = "Family") + coord_flip() +
         axis.title.x = element_text(color="black", size=12,face="bold"),
         legend.position = "right") +
   scale_color_brewer(palette="Spectral")+
-  scale_fill_brewer(palette="Spectral")
+  scale_fill_brewer(palette="Spectral") +
+  xlab("") # This line removes the x-axis label
 
+
+# pdf(file = "top10.ori.pdf", width = 6.75, height = 5)
+top10.ori
+# Close the PDF device and save the plot to a file
+# dev.off()
 
 # Merge reads by groups (Enriched)
 physeq.rich <- subset_samples(physeq, Comparison=="Enriched") 
@@ -570,10 +695,8 @@ taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent)[top10otus, "Famil
 tax_table(AyBCode.percent) <- tax_table(taxtab10)
 
 top10plot = prune_taxa(top10otus, AyBCode.percent)
-top10plot
-title = "The 10 most abundant taxa (16s - Enriched)"
 
-plot_bar(top10plot, fill = "Family") + coord_flip() + 
+top10.rich <- plot_bar(top10plot, fill = "Family") + coord_flip() + 
   ylab("Taxa Matched with Silva138 (%)") + ylim(0, 100) + 
   theme_classic() + 
   theme(text = element_text(size=14, colour = "black"), 
@@ -585,8 +708,20 @@ plot_bar(top10plot, fill = "Family") + coord_flip() +
         axis.title.x = element_text(color="black", size=12,face="bold"),
         legend.position = "right") +
   scale_color_brewer(palette="Spectral")+
-  scale_fill_brewer(palette="Spectral")
+  scale_fill_brewer(palette="Spectral") +
+  xlab("") # This line removes the x-axis label
+
+# pdf(file = "top10.rich.pdf", width = 6.75, height = 5)
+top10.rich
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.ori, physeq.rich, AyBCode, 
+   standf, AyBCode.percent, top10otus, 
+   taxtab10, top10plot, top10.ori, top10.rich)
 ```
 
-
-
+```{r sessionInfo, warning=FALSE, message=FALSE}
+sessionInfo()
+```
