@@ -2,7 +2,7 @@
 title: Cryopreservation of a soil microbiome using a Stirling Cycle approach – a genomic (16s data)
   assessment
 author: Payton Yau
-date: 2023-11-03
+date: 2023-11-09
 output:
   pdf_document:
     toc: true
@@ -66,13 +66,11 @@ physeq <- qza_to_phyloseq(
 physeq ## confirm the object
 ```
 
-### import data and subgroup the data
 
+### Normalise number of reads in each sample by using median sequencing depth
 Normalising the number of reads in each sample is an important step in analysing sequencing data, as it helps to remove any biases introduced by differences in sequencing depth across samples. One commonly used method for normalisation is to scale the read counts by the median sequencing depth.
 
 ```{r pressure, , warning=FALSE, message=FALSE}
-## Normalise number of reads in each sample by using median sequencing depth
-
 # Calculate the median sequencing depth
 total <- median(sample_sums(physeq)) 
 # Define a scaling function
@@ -85,10 +83,11 @@ rm(total, standf)
 ```
 
 ### Sub-grouping
-
-Separate analysis is necessary for the Direct and Enriched experiments since the data contained in each subset differs and requires distinct examination.
+Separate analysis is necessary for the direct and enriched experiments since the data contained in each subset differs and requires distinct examination.
 
 ```{r abc, warning=FALSE, message=FALSE}
+
+
 ## Subgroup - Direct
 physeq.norm.ori <- subset_samples(physeq.norm, Comparison=="Direct") 
 # Get the column names of the sample_data
@@ -112,7 +111,6 @@ colnames(sample_data(physeq.norm.rich))[group_index] <- "Enriched"
 # Copy the column information from "Enriched" to "Group"
 sample_data(physeq.norm.rich)$Group <- sample_data(physeq.norm.rich)$Enriched
 
-
 ## Merge the replicate samples for each Group
 physeq.norm.ori.group = merge_samples(physeq.norm.ori, "Direct") # Sum between replicate samples
 sample_data(physeq.norm.ori.group)$Direct <- rownames(sample_data(physeq.norm.ori.group))
@@ -124,12 +122,87 @@ sample_data(physeq.norm.rich.group)$Enriched <- rownames(sample_data(physeq.norm
 rm(physeq.norm, group_index)
 ```
 
+### Plot the raw reads, Direct
+```{r TOP10.Direct.RawReads, warning=FALSE, message=FALSE}
+physeq.ori <- subset_samples(physeq, Comparison=="Direct") 
+# Calculate the total raw reads of for each sample
+meta <- data.frame(physeq.ori@sam_data)
+
+# Plot a graph of the abundance of Fusarium for each sample grouped by Group:
+Raw_Reads.Ori <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
+                        aes(x = Group, y = Raw_Reads, colour = interaction(Group))) +
+  geom_point(alpha = 1, position = "jitter", size = 4) +
+  geom_boxplot(alpha = 0, colour = "black", size = 0.8) +
+  scale_y_continuous(labels = scales::comma, limits=c(140000, 750000), 
+                     breaks = c(150000, 300000, 450000, 600000, 750000)) + 
+  theme_classic() + 
+  labs(x = "", y = "Read") +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Set2")+
+  scale_fill_brewer(palette="Set2")
+
+# pdf(file = "Raw_Reads.Ori.pdf", width = 6, height = 5)
+Raw_Reads.Ori
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.ori, meta, Raw_Reads.Ori)
+```
+
+### Plot the raw reads, Enriched
+```{r TOP10.Rich.RawReads, warning=FALSE, message=FALSE}
+physeq.rich <- subset_samples(physeq, Comparison=="Enriched") 
+# Calculate the total raw reads of for each sample
+meta <- data.frame(physeq.rich@sam_data)
+
+# Plot a graph of the abundance of Fusarium for each sample grouped by Group:
+Raw_Reads.rich <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
+       aes(x = Group, y = Raw_Reads, colour = interaction(Group))) +
+  geom_point(alpha = 1, position = "jitter", size = 4) +
+  geom_boxplot(alpha = 0, colour = "black", size = 0.8) +
+  scale_y_continuous(labels = scales::comma, limits=c(140000, 750000), 
+                     breaks = c(150000, 300000, 450000, 600000, 750000)) + 
+  theme_classic() + 
+  labs(x = "", y = "Read") +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Set2")+
+  scale_fill_brewer(palette="Set2")
+
+# pdf(file = "Raw_Reads.rich.pdf", width = 6, height = 5)
+Raw_Reads.rich
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.rich, meta, Raw_Reads.rich)
+```
+
 ### Beta diversity 
+Beta diversity is a measure used in ecological and microbial community studies to assess the dissimilarity of species or taxa compositions between different samples. It quantifies the variation in community structure and helps researchers understand the diversity and uniqueness of microbial communities. Various metrics, such as Bray-Curtis dissimilarity and Jaccard index, are employed to calculate beta diversity values, which can be visualised using techniques like Principal Coordinate Analysis or Non-Metric Multidimensional Scaling. Beta diversity analysis allows for comparisons of microbial communities across habitats, treatments, or environmental gradients, revealing factors influencing community variation and identifying key drivers of community structure. It provides insights into the functional and ecological significance of different microbial assemblages and their responses to environmental changes, aiding our understanding of microbial community dynamics and their roles in ecology, environmental science, and human health research.
 
-Beta diversity is a measure used in ecological and microbial community studies to assess the dissimilarity of species or taxa compositions between different samples. It quantifies the variation in community structure and helps researchers understand the diversity and uniqueness of microbial communities. Various metrics, such as Bray-Curtis dissimilarity and Jaccard index, are employed to calculate beta diversity values, which can be visualized using techniques like Principal Coordinate Analysis or Non-Metric Multidimensional Scaling. Beta diversity analysis allows for comparisons of microbial communities across habitats, treatments, or environmental gradients, revealing factors influencing community variation and identifying key drivers of community structure. It provides insights into the functional and ecological significance of different microbial assemblages and their responses to environmental changes, aiding our understanding of microbial community dynamics and their roles in ecology, environmental science, and human health research.
-
+#### Beta diversity  - Direct
 ```{r two, , warning=FALSE, message=FALSE}
-## Beta diversity  - Direct
 nmds.ori <- ordinate(physeq = physeq.norm.ori, method = "NMDS", distance = "bray")
 
 Beta.ori <- plot_ordination(
@@ -160,8 +233,12 @@ Beta.ori
 # Close the PDF device and save the plot to a file
 # dev.off()
 
+# Clean up by removing objects that are no longer needed
+rm(nmds.ori, Beta.ori, nmds.rich, Beta.rich)
+```
 
-## Beta diversity  - Enriched
+#### Beta diversity  - Enriched
+```{r two.b , warning=FALSE, message=FALSE}
 nmds.rich <- ordinate(physeq = physeq.norm.rich, method = "NMDS", distance = "bray")
 
 Beta.rich <- plot_ordination(
@@ -194,11 +271,10 @@ rm(nmds.ori, Beta.ori, nmds.rich, Beta.rich)
 ```
 
 ### Alpha diversity
-
 Alpha diversity is a fundamental concept in ecology and refers to the diversity or richness of species within a specific community or habitat. In the context of microbial ecology, alpha diversity represents the diversity of microorganisms within a given sample or microbiome. It provides insights into the variety and evenness of microbial species present in a particular environment. Common measures of alpha diversity include species richness, which counts the number of unique species, and evenness, which assesses the distribution of species abundances. Alpha diversity is crucial for understanding the stability, resilience, and functional potential of microbial communities. It can be influenced by various factors, including environmental conditions, host factors, and perturbations. By comparing alpha diversity across different samples or experimental groups, researchers can gain insights into the impact of factors such as disease, habitat changes, or interventions on microbial community structure.
 
+#### Direct
 ```{r forth, , warning=FALSE, message=FALSE}
-## Direct
 tab = cbind(x = sample_data(physeq.norm.ori), 
             y = estimate_richness(physeq.norm.ori, measures = 'Fisher'))
 
@@ -215,8 +291,8 @@ alpha.ori <- ggplot(data = tab, aes(x = x.Direct,
   labs(
     x = element_blank(), 
     y = "Alpha Diversity (Fisher)") + 
-  geom_point(size = 1.75) + 
-  geom_boxplot(alpha = 0.5) + 
+  geom_point(size = 3) + 
+  geom_boxplot(alpha = 0.7) + 
   stat_pvalue_manual(stat.test, 
                      y.position = c(1250, 1305, 1370),
                      label = "p.adj.signif",
@@ -227,10 +303,9 @@ alpha.ori <- ggplot(data = tab, aes(x = x.Direct,
                      inherit.aes = FALSE) + 
   scale_y_continuous(limits=c(350, 1380), breaks = c(350, 700, 1050, 1360)) +
   theme(text = element_text(size=18, colour = "black"), 
-        axis.ticks = element_line(colour = "black", size = 1.1),
-        axis.line = element_line(colour = 'black', size = 1.1),
-        axis.text.x = element_text(colour = "black",
-                                   angle=0, 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",angle=0, 
                                    size = 13, face="bold"),
         axis.text.y = element_text(angle=0, hjust=0, colour = "black",
                                    size = 13, face="bold"),
@@ -244,9 +319,12 @@ alpha.ori
 # Close the PDF device and save the plot to a file
 # dev.off()
 
+# Clean up by removing objects that are no longer needed
+# rm(tab, stat.test, alpha.ori)
+```
 
-
-## Enriched
+#### Enriched
+```{r forth.b , warning=FALSE, message=FALSE}
 tab1 = cbind(x = sample_data(physeq.norm.rich), 
             y = estimate_richness(physeq.norm.rich, measures = 'Fisher'))
 
@@ -263,8 +341,8 @@ alpha.rich <- ggplot(data = tab1, aes(x = x.Enriched,
   labs(
     x = element_blank(), 
     y = "Alpha Diversity (Fisher)") + 
-  geom_point(size = 1.75) + 
-  geom_boxplot(alpha = 0.5) + 
+  geom_point(size = 3) + 
+  geom_boxplot(alpha = 0.7) + 
   stat_pvalue_manual(stat.test1, 
                      y.position = c(70, 74.5, 80),
                      label = "p.adj.signif",
@@ -275,8 +353,8 @@ alpha.rich <- ggplot(data = tab1, aes(x = x.Enriched,
                      inherit.aes = FALSE) + 
   scale_y_continuous(limits=c(0, 80), breaks = c(0, 20, 40, 60, 80)) +
   theme(text = element_text(size=18, colour = "black"), 
-        axis.ticks = element_line(colour = "black", size = 1.1),
-        axis.line = element_line(colour = 'black', size = 1.1),
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
         axis.text.x = element_text(colour = "black",
                                    angle=0, 
                                    size = 13, face="bold"),
@@ -293,20 +371,18 @@ alpha.rich
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-rm(tab, stat.test, alpha.ori, tab1, stat.test1, alpha.rich)
+rm(tab1, stat.test1, alpha.rich)
 ```
 
 #### Determine the count of taxa within each level and group
-
 The purpose of this process is to visualise the distribution of the number of matched abundance across different groups and to identify any patterns in the distribution of the processed abundance within individual group.
-
-
+#### Direct
 ```{r physeq.norm.ori.group, warning=FALSE, message=FALSE}
 # Create an empty list to store genus-level abundance data for each taxonomic level
 gentab_levels <- list()
 
 # Set observation threshold
-observationThreshold <- 1
+observationThreshold <- 15
 
 # Define the taxonomic levels
 genus_levels <- c("Kingdom", "Phylum", "Class", "Order", 
@@ -383,13 +459,13 @@ rm(gentab_levels, genus_levels, observationThreshold,
    BB, B2, data_long, gentab, tax.ori, genfac, level, level_counts)
 
 ```
-
+#### Enriched
 ```{r physeq.norm.rich.group, warning=FALSE, message=FALSE}
 # Create an empty list to store genus-level abundance data for each taxonomic level
 gentab_levels <- list()
 
 # Set observation threshold
-observationThreshold <- 1
+observationThreshold <- 15
 
 # Define the taxonomic levels
 genus_levels <- c("Kingdom", "Phylum", "Class", "Order", 
@@ -464,9 +540,8 @@ rm(gentab_levels, genus_levels, observationThreshold,
 ```
 
 ### Upset plot using UpsetR
-
 Venn diagrams are commonly used for visualizing sets, but they can become complex with more than five sets. UpSet graphs, on the other hand, offer a more efficient way to display intersections and complements, especially for larger or multiple datasets. They provide a more intuitive and informative data representation.
-
+#### Direct
 ```{r UpSetR1, warning=FALSE, message=FALSE}
 # Aggregate taxa at the genus level
 B <- aggregate_taxa(physeq.norm.ori.group, "Genus", verbose = TRUE)
@@ -490,7 +565,7 @@ D <- tibble(
 ) %>%
   group_by(Sample) %>%
   mutate(rank = rank(plyr::desc(Abundance))) %>%
-   filter(Abundance > 0) %>%
+   filter(Abundance > 15) %>%
   ungroup() %>%
   select(Sample, Abundance, ASV)
 
@@ -513,12 +588,13 @@ binary_fun <- function(x) {
 col = c("#FC8D62", "#8DA0CB","#66C2A5")
 
 # Apply the binary function to columns 2 to 4
-temp_df <- apply(E[2:4], 2, binary_fun)
-temp_df <- as.data.frame(temp_df)
+df.direct.family <- apply(E[2:4], 2, binary_fun)
+df.direct.family <- as.data.frame(df.direct.family)
+rownames(df.direct.family) <- E$ASV
 
 # Create an UpSet plot
-UpSet.Ori <- upset(temp_df, 
-                    sets = colnames(temp_df), 
+UpSet.Ori <- upset(df.direct.family, 
+                    sets = colnames(df.direct.family), 
                     sets.bar.color = (col),
                     order.by = "freq", 
                     empty.intersections = "on",
@@ -531,7 +607,6 @@ UpSet.Ori <- upset(temp_df,
                     text.scale = 1.5
 )
 
-
 # Open a new PDF graphics device
 # pdf(file = "UpSet.Ori.pdf", width=6.5,height=4.5)
 
@@ -540,9 +615,14 @@ print(UpSet.Ori)
 
 # Close the PDF device and save the plot to a file
 # dev.off()  
+
+# Clean up by removing unnecessary objects
+rm(B, taxa_to_remove, B2, sample_data, 
+   otu_table, abundance, D, E,
+   binary_fun, col, binary_fun, UpSet.Ori)
+
 ```
-
-
+#### Enriched
 ```{r UpSetR2, warning=FALSE, message=FALSE}
 # Aggregate taxa at the genus level
 B <- aggregate_taxa(physeq.norm.rich.group, "Genus", verbose = TRUE)
@@ -566,7 +646,7 @@ D <- tibble(
 ) %>%
   group_by(Sample) %>%
   mutate(rank = rank(plyr::desc(Abundance))) %>%
-   filter(Abundance > 0) %>%
+   filter(Abundance > 15) %>%
   ungroup() %>%
   select(Sample, Abundance, ASV)
 
@@ -589,12 +669,12 @@ binary_fun <- function(x) {
 col = brewer.pal(n = 3, name = "Set1")
 
 # Apply the binary function to columns 2 to 4
-temp_df <- apply(E[2:4], 2, binary_fun)
-temp_df <- as.data.frame(temp_df)
+df.enriched.family <- apply(E[2:4], 2, binary_fun)
+df.enriched.family <- as.data.frame(df.enriched.family)
 
 # Create an UpSet plot
-upset.Rich <- upset(temp_df, 
-                    sets = colnames(temp_df), 
+upset.Rich <- upset(df.enriched.family, 
+                    sets = colnames(df.enriched.family), 
                     sets.bar.color = (col),
                     order.by = "freq", 
                     empty.intersections = "on",
@@ -616,9 +696,13 @@ print(upset.Rich)
 
 # Close the PDF device and save the plot to a file
 # dev.off()  
+
+# Clean up by removing unnecessary objects
+rm(B, taxa_to_remove, B2, sample_data, 
+   otu_table, abundance, D, E,
+   binary_fun, col, binary_fun, upset.Rich)
 ```
 ### Pairwise comparison using PERMANOVA
-
 Pairwise PERMANOVA (Permutational Multivariate Analysis of Variance) is a statistical method used in microbial community studies to examine differences between groups or treatments. It assesses the dissimilarity between samples, allowing for the comparison of multivariate data. This approach is useful to focus on specific group comparisons rather than comparing all groups simultaneously. It enables the investigation of the effects of specific treatments on microbial communities, helping to determine if there are significant differences in community composition between selected groups. By considering variation within and between groups, pairwise PERMANOVA offers a robust statistical assessment of dissimilarity, providing insights into community structure differences.
 
 ```{r fifth, echo=FALSE}
@@ -641,27 +725,33 @@ rm(metdat.rich, dat.rich, metdat.ori, dat.ori)
 ```
 
 ### Top 10 at family level
+Identifying the top 10 bacteria in the top 10 family level and their corresponding percentages provides a snapshot of the microbial community’s composition. 
 
-In microbiome analysis, identifying the top 10 bacteria in the top 10 family level and their corresponding percentages provides a snapshot of the microbial community’s composition. 
-
-```{r TOP10, warning=FALSE, message=FALSE}
-# Merge reads by groups (Direct)
-physeq.ori <- subset_samples(physeq, Comparison=="Direct") 
-AyBCode <- merge_samples(physeq.ori, "Group", fun = sum)
+#### Direct treatment
+```{r TOP10.Direct, warning=FALSE, message=FALSE}
+##### create a function
+standf = function(x) x / sum(x) * 100
+##### unwanted taxon names
+taxa_to_remove <- c("uncultured", "Unknown")
 
 ## Normalised number of reads in percentage
-standf = function(x) x / sum(x) * 100
-AyBCode.percent = transform_sample_counts(AyBCode, standf)
+AyBCode.percent = transform_sample_counts(physeq.norm.ori.group, standf)
 
-top10otus = names(sort(taxa_sums(AyBCode.percent), TRUE)[1:26])
-taxtab10 = cbind(tax_table(AyBCode.percent), Family = NA)
-taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent)[top10otus, "Family"],"character")
-tax_table(AyBCode.percent) <- tax_table(taxtab10)
+# Remove unwanted taxon names
+AyBCode.percent.B <- subset_taxa(AyBCode.percent, !get("Family") %in% taxa_to_remove)
 
-top10plot = prune_taxa(top10otus, AyBCode.percent)
+## Aggregate
+AyBCode.percent.B <- aggregate_taxa(AyBCode.percent.B, "Family", verbose = TRUE)
+
+top10otus = names(sort(taxa_sums(AyBCode.percent.B), TRUE)[1:10])
+taxtab10 = cbind(tax_table(AyBCode.percent.B), Family = NA)
+taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent.B)[top10otus, "Family"],"character")
+tax_table(AyBCode.percent.B) <- tax_table(taxtab10)
+
+top10plot = prune_taxa(top10otus, AyBCode.percent.B)
 
 top10.ori <- plot_bar(top10plot, fill = "Family") + coord_flip() + 
-  ylab("Taxa Matched with Silva138 (%)") + ylim(0, 20) + 
+  ylab("Taxa Matched with Silva138 (%)") + ylim(0, 50) + 
   theme_classic() + 
   theme(text = element_text(size=14, colour = "black"), 
         axis.ticks = element_line(colour = "black", size = 1.1),
@@ -675,26 +765,192 @@ top10.ori <- plot_bar(top10plot, fill = "Family") + coord_flip() +
   scale_fill_brewer(palette="Spectral") +
   xlab("") # This line removes the x-axis label
 
-
 # pdf(file = "top10.ori.pdf", width = 6.75, height = 5)
 top10.ori
 # Close the PDF device and save the plot to a file
 # dev.off()
 
-# Merge reads by groups (Enriched)
-physeq.rich <- subset_samples(physeq, Comparison=="Enriched") 
-AyBCode <- merge_samples(physeq.rich, "Group", fun = sum)
-
+# Clean up by removing objects that are no longer needed
+rm(AyBCode.percent, AyBCode.percent.B, taxtab10, tax_table, top10plot, top10.ori)
+```
+### Calculate the statistics in percentange on the top 10 family level 
+```{r TOP10.Direct.cal, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
-standf = function(x) x / sum(x) * 100
-AyBCode.percent = transform_sample_counts(AyBCode, standf)
+AyBCode.percent = transform_sample_counts(physeq.norm.ori, standf)
 
-top10otus = names(sort(taxa_sums(AyBCode.percent), TRUE)[1:23])
-taxtab10 = cbind(tax_table(AyBCode.percent), Family = NA)
-taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent)[top10otus, "Family"],"character")
-tax_table(AyBCode.percent) <- tax_table(taxtab10)
+# Subset the phyloseq object for the top 10 OTUs
+physeq.top10 <- subset_taxa(AyBCode.percent, Family %in% top10otus)
 
-top10plot = prune_taxa(top10otus, AyBCode.percent)
+# Aggregate taxa at the genus level
+physeq.top10 <- aggregate_taxa(physeq.top10, "Family", verbose = TRUE)
+
+# Calculate the total abundance of Fusarium for each sample
+meta = AyBCode.percent@sam_data
+otudf = as.data.frame(t(as.data.frame(physeq.top10@otu_table)))
+
+# Assuming 'meta' and 'otudf' are your data frames
+combined_df <- merge(meta, otudf, by = "row.names", all = TRUE)
+
+# Set row names of the combined data frame
+rownames(combined_df) <- combined_df$Row.names
+
+# Remove the 'Row.names' column
+combined_df$Row.names <- NULL
+
+# Define a function to calculate the statistics
+calc_stats <- function(x) c(mean = mean(x), 
+                            sd = sd(x), 
+                            min = min(x), 
+                            Q1 = quantile(x, 0.25), 
+                            median = median(x), 
+                            Q3 = quantile(x, 0.75), 
+                            max = max(x))
+
+# Get the column names from "Bryobacteraceae" onwards
+cols <- colnames(combined_df)[which(colnames(combined_df) == "Bryobacteraceae"):ncol(combined_df)]
+
+# Initialize an empty list to store the statistics
+stats_list <- list()
+
+# Loop over the columns
+for(col in cols){
+  # Calculate the statistics for each group and each column
+  stats <- aggregate(combined_df[, col], 
+                     by = list(combined_df$Group), 
+                     FUN = calc_stats)
+  
+  # Store the statistics in the list
+  stats_list[[col]] <- stats
+}
+
+# print(stats_list[["Bryobacteraceae"]])
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.top10, meta, otudf, combined_df, cols, col, stats, calc_stats, top10otus)
+```
+
+### Plot the graph for Bacillaceae , Direct
+```{r TOP10.Direct.Bacillaceae, warning=FALSE, message=FALSE}
+physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Bacillaceae")
+
+# Calculate the total abundance of Fusarium for each sample
+meta <- data.frame(AyBCode.percent@sam_data)
+otudf = as.data.frame(t(as.data.frame(physeq.a.genus@otu_table)))
+meta$Bacillaceae = rowSums(otudf)
+
+# Now you can use 'meta_df' in your functions
+stat.test1 <- meta %>%
+  t_test(Bacillaceae ~ Group) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+
+# Plot a graph of the abundance of Fusarium for each sample grouped by Group:
+Bacillaceae.Ori <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
+       aes(x = Group, y = Bacillaceae, colour = interaction(Group))) +
+  geom_point(alpha = 1, position = "jitter", size = 4) +
+  geom_boxplot(alpha = 0, colour = "black", size = 0.8)+
+  theme_classic() + 
+  labs(x = "", y = "Percentage (%)") +
+    stat_pvalue_manual(stat.test1, 
+                     y.position = c(7.25, 7.6, 8),
+                     label = "p.adj.signif",
+                     face="bold", 
+                     size = 6, 
+                     linetype = 1,
+                     tip.length = 0.02,
+                     inherit.aes = FALSE) + 
+  scale_y_continuous(limits=c(2, 8), breaks = c(2, 4, 6, 8)) +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Set2")+
+  scale_fill_brewer(palette="Set2")
+
+# pdf(file = "Bacillaceae.ori.pdf", width = 6, height = 5)
+Bacillaceae.Ori
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.a.genus, meta, otudf)
+```
+
+### Plot the graph for Bryobacteraceae, Direct
+```{r TOP10.Direct.Bryobacteraceae, warning=FALSE, message=FALSE}
+physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Bryobacteraceae")
+
+# Calculate the total abundance of Fusarium for each sample
+meta = data.frame(AyBCode.percent@sam_data)
+otudf = as.data.frame(t(as.data.frame(physeq.a.genus@otu_table)))
+meta$Bryobacteraceae = rowSums(otudf)
+
+stat.test1 <- meta %>%
+  t_test(Bryobacteraceae ~ Group) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+
+# Plot a graph of the abundance of Fusarium for each sample grouped by Group:
+Bryobacteraceae.Ori <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
+             aes(x = Group, y = Bryobacteraceae, colour = interaction(Group))) +
+  geom_point(alpha = 1, position = "jitter", size = 4) +
+  geom_boxplot(alpha = 0, colour = "black", size = 0.8)+
+  theme_classic() + 
+  labs(x = "", y = "Percentange (%)") +
+      stat_pvalue_manual(stat.test1, 
+                     y.position = c(4.025, 4.15, 4.3),
+                     label = "p.adj.signif",
+                     face="bold", 
+                     size = 6, 
+                     linetype = 1,
+                     tip.length = 0.02,
+                     inherit.aes = FALSE) + 
+  scale_y_continuous(limits=c(2, 4.3), breaks = c(2, 3, 4)) +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Set2")+
+  scale_fill_brewer(palette="Set2")
+
+
+# pdf(file = "Bryobacteraceae.ori.pdf", width = 6, height = 5)
+Bryobacteraceae.Ori
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing objects that are no longer needed
+# rm(physeq.a.genus, meta, otudf, AyBCode.percent)
+```
+
+#### Enriched treatment
+```{r TOP10.Enriched, warning=FALSE, message=FALSE}
+## Normalised number of reads in percentage
+AyBCode.percent = transform_sample_counts(physeq.norm.rich.group, standf)
+
+# Remove unwanted taxon names
+AyBCode.percent.B <- subset_taxa(AyBCode.percent, !get("Family") %in% taxa_to_remove)
+AyBCode.percent.B <- aggregate_taxa(AyBCode.percent.B, "Family", verbose = TRUE)
+
+top10otus = names(sort(taxa_sums(AyBCode.percent.B), TRUE)[1:10])
+taxtab10 = cbind(tax_table(AyBCode.percent.B), Family = NA)
+taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent.B)[top10otus, "Family"],"character")
+tax_table(AyBCode.percent.B) <- tax_table(taxtab10)
+
+top10plot = prune_taxa(top10otus, AyBCode.percent.B)
 
 top10.rich <- plot_bar(top10plot, fill = "Family") + coord_flip() + 
   ylab("Taxa Matched with Silva138 (%)") + ylim(0, 100) + 
@@ -717,9 +973,170 @@ top10.rich
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-rm(physeq.ori, physeq.rich, AyBCode, 
-   standf, AyBCode.percent, top10otus, 
-   taxtab10, top10plot, top10.ori, top10.rich)
+# rm(physeq.ori, physeq.rich, AyBCode, AyBCode.percent, taxa_to_remove,
+#    AyBCode.percent.B, taxtab10, top10plot, top10.ori, top10.rich)
+```
+
+### Calculate the statistics in percentange on the top 10 family level
+```{r TOP10.B, warning=FALSE, message=FALSE}
+# Subset the phyloseq object for the top 10 OTUs
+physeq.top10 <- subset_taxa(AyBCode.percent, Family %in% top10otus)
+
+# Aggregate taxa at the genus level
+physeq.top10 <- aggregate_taxa(physeq.top10, "Family", verbose = TRUE)
+
+# Calculate the total abundance of Fusarium for each sample
+meta = AyBCode.percent@sam_data
+otudf = as.data.frame(t(as.data.frame(physeq.top10@otu_table)))
+
+# Assuming 'meta' and 'otudf' are your data frames
+combined_df <- merge(meta, otudf, by = "row.names", all = TRUE)
+
+# Set row names of the combined data frame
+rownames(combined_df) <- combined_df$Row.names
+
+# Remove the 'Row.names' column
+combined_df$Row.names <- NULL
+
+
+# Define a function to calculate the statistics
+calc_stats <- function(x) c(mean = mean(x), 
+                            sd = sd(x), 
+                            min = min(x), 
+                            Q1 = quantile(x, 0.25), 
+                            median = median(x), 
+                            Q3 = quantile(x, 0.75), 
+                            max = max(x))
+
+# Get the column names from "Bryobacteraceae" onwards
+cols <- colnames(combined_df)[which(colnames(combined_df) == "Nocardiaceae"):ncol(combined_df)]
+
+# Initialize an empty list to store the statistics
+stats_list <- list()
+
+# Loop over the columns
+for(col in cols){
+  # Calculate the statistics for each group and each column
+  stats <- aggregate(combined_df[, col], 
+                     by = list(combined_df$Group), 
+                     FUN = calc_stats)
+  
+  # Store the statistics in the list
+  stats_list[[col]] <- stats
+}
+
+# print(stats_list[["Bacillaceae"]])
+
+# Clean up by removing objects that are no longer needed
+# rm(physeq.top10, meta, otudf, combined_df, cols, col, stats, calc_stats, top10otus)
+```
+
+### Plot the graph for Clostridiaceae, Enriched
+```{r TOP10.Enriched.Clostridiaceae, warning=FALSE, message=FALSE}
+## Normalised number of reads in percentage
+AyBCode.percent = transform_sample_counts(physeq.norm.rich, standf)
+physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Clostridiaceae")
+
+# Calculate the total abundance of Clostridiaceae for each sample
+meta = data.frame(AyBCode.percent@sam_data)
+otudf = as.data.frame(t(as.data.frame(physeq.a.genus@otu_table)))
+meta$Clostridiaceae = rowSums(otudf)
+
+stat.test1 <- meta %>%
+  t_test(Clostridiaceae ~ Group) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+
+# Plot a graph of the abundance of Fusarium for each sample grouped by Group:
+Clostridiaceae.Rich <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
+                              aes(x = Group, y = Clostridiaceae, colour = interaction(Group))) +
+  geom_point(alpha = 1, position = "jitter", size = 4) +
+  geom_boxplot(alpha = 0, colour = "black", size = 0.8)+
+  theme_classic() + 
+  labs(x = "", y = "Percentange (%)") +
+      stat_pvalue_manual(stat.test1, 
+                     y.position = c(40, 43, 46),
+                     label = "p.adj.signif",
+                     face="bold", 
+                     size = 6, 
+                     linetype = 1,
+                     tip.length = 0.02,
+                     inherit.aes = FALSE) + 
+  scale_y_continuous(limits=c(0, 46), breaks = c(0, 20, 40)) +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Set1")+
+  scale_fill_brewer(palette="Set1")
+
+# pdf(file = "Clostridiaceae.Rich.pdf", width = 6, height = 5)
+Clostridiaceae.Rich
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.a.genus, meta, otudf)
+```
+
+### Plot the graph for Moraxellaceae, Enriched
+```{r TOP10.Enriched.Moraxellaceae, warning=FALSE, message=FALSE}
+## Normalised number of reads in percentage
+AyBCode.percent = transform_sample_counts(physeq.norm.rich, standf)
+physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Moraxellaceae")
+
+# Calculate the total abundance of Moraxellaceae for each sample
+meta = data.frame(AyBCode.percent@sam_data)
+otudf = as.data.frame(t(as.data.frame(physeq.a.genus@otu_table)))
+meta$Moraxellaceae = rowSums(otudf)
+
+stat.test1 <- meta %>%
+  t_test(Moraxellaceae ~ Group) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+
+# Plot a graph of the abundance of Fusarium for each sample grouped by Group:
+Moraxellaceae.Rich <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
+                             aes(x = Group, y = Moraxellaceae, colour = interaction(Group))) +
+  geom_point(alpha = 1, position = "jitter", size = 4) +
+  geom_boxplot(alpha = 0, colour = "black", size = 0.8)+
+  theme_classic() + 
+  labs(x = "", y = "Percentange (%)") +
+  stat_pvalue_manual(stat.test1, 
+                     y.position = c(40, 43, 46),
+                     label = "p.adj.signif",
+                     face="bold", 
+                     size = 6, 
+                     linetype = 1,
+                     tip.length = 0.02,
+                     inherit.aes = FALSE) + 
+  scale_y_continuous(limits=c(-0.01, 46), breaks = c(0, 10, 20, 30, 40)) +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Set1")+
+  scale_fill_brewer(palette="Set1")
+
+# pdf(file = "Moraxellaceae.Rich.pdf", width = 6, height = 5)
+Moraxellaceae.Rich
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.a.genus, meta, otudf, AyBCode.percent)
 ```
 
 ```{r sessionInfo, warning=FALSE, message=FALSE}

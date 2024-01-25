@@ -178,7 +178,7 @@ The purpose of this process is to visualise the distribution of the number of ma
 gentab_levels <- list()
 
 # Set observation threshold
-observationThreshold <- 1
+observationThreshold <- 15
 
 # Define the taxonomic levels
 genus_levels <- c("Kingdom", "Phylum", "Class", "Order", 
@@ -286,7 +286,7 @@ D <- tibble(
 ) %>%
   group_by(Sample) %>%
   mutate(rank = rank(plyr::desc(Abundance))) %>%
-   filter(Abundance > 0) %>%
+   filter(Abundance > 15) %>%
   ungroup() %>%
   select(Sample, Abundance, ASV)
 
@@ -364,15 +364,23 @@ AyBCode <- merge_samples(physeq, "Group", fun = sum)
 standf = function(x) x / sum(x) * 100
 AyBCode.percent = transform_sample_counts(AyBCode, standf)
 
-top10otus = names(sort(taxa_sums(AyBCode.percent), TRUE)[1:15])
-taxtab10 = cbind(tax_table(AyBCode.percent), Family = NA)
-taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent)[top10otus, "Family"],"character")
-tax_table(AyBCode.percent) <- tax_table(taxtab10)
+##### unwanted taxon names
+taxa_to_remove <- c("uncultured", "Unknown")
+# Remove unwanted taxon names
+AyBCode.percent.B <- subset_taxa(AyBCode.percent, !get("Family") %in% taxa_to_remove)
+## Aggregate
+AyBCode.percent.B <- aggregate_taxa(AyBCode.percent.B, "Family", verbose = TRUE)
 
-top10plot = prune_taxa(top10otus, AyBCode.percent)
+
+top10otus = names(sort(taxa_sums(AyBCode.percent.B), TRUE)[1:10])
+taxtab10 = cbind(tax_table(AyBCode.percent.B), Family = NA)
+taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent.B)[top10otus, "Family"],"character")
+tax_table(AyBCode.percent.B) <- tax_table(taxtab10)
+
+top10plot = prune_taxa(top10otus, AyBCode.percent.B)
 
 top10.its <- plot_bar(top10plot, fill = "Family") + coord_flip() + 
-  ylab("Taxa Matched with UNITE (%)") + ylim(0, 50) + 
+  ylab("Taxa Matched with UNITE (%)") + ylim(0, 80) + 
   theme_classic() + 
   theme(text = element_text(size=14, colour = "black"), 
         axis.ticks = element_line(colour = "black", size = 1.1),
@@ -390,11 +398,116 @@ top10.its
 # Close the PDF device and save the plot to a file
 # dev.off()
 
-rm(physeq.ori, physeq.rich, AyBCode, 
-   standf, AyBCode.percent, top10otus, 
-   taxtab10, top10plot, top10.ori, top10.rich)
+# rm(physeq.ori, physeq.rich, AyBCode, 
+#    standf, AyBCode.percent, top10otus, 
+#    taxtab10, top10plot, top10.ori, top10.rich)
 ```
+### Plot the graph for Moraxellaceae, Enriched
+```{r TOP10.Enriched.Clavicipitaceae, warning=FALSE, message=FALSE}
+## Normalised number of reads in percentage
+AyBCode.percent = transform_sample_counts(physeq.norm, standf)
+physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Clavicipitaceae")
 
+# Calculate the total abundance of Clavicipitaceae for each sample
+meta = data.frame(AyBCode.percent@sam_data)
+otudf = as.data.frame(t(as.data.frame(physeq.a.genus@otu_table)))
+meta$Clavicipitaceae = rowSums(otudf)
+
+stat.test1 <- meta %>%
+  t_test(Clavicipitaceae ~ Group) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+
+# Plot a graph of the abundance of Clavicipitaceae for each sample grouped by Group:
+Clavicipitaceae.Rich <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
+                             aes(x = Group, y = Clavicipitaceae, colour = interaction(Group))) +
+  geom_point(alpha = 1, position = "jitter", size = 4) +
+  geom_boxplot(alpha = 0, colour = "black", size = 0.8)+
+  theme_classic() + 
+  labs(x = "", y = "Percentange (%)") +
+  stat_pvalue_manual(stat.test1, 
+                     y.position = c(26, 28, 30),
+                     label = "p.adj.signif",
+                     face="bold", 
+                     size = 6, 
+                     linetype = 1,
+                     tip.length = 0.02,
+                     inherit.aes = FALSE) + 
+  scale_y_continuous(limits=c(0, 30), breaks = c(0, 10, 20, 30)) +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Set1")+
+  scale_fill_brewer(palette="Set1")
+
+# pdf(file = "Clavicipitaceae.ITS.pdf", width = 6, height = 5)
+Clavicipitaceae.Rich
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.a.genus, meta, otudf, AyBCode.percent)
+```
+### Plot the graph for Nectriaceae, Enriched
+```{r TOP10.Enriched.Nectriaceae, warning=FALSE, message=FALSE}
+## Normalised number of reads in percentage
+AyBCode.percent = transform_sample_counts(physeq.norm, standf)
+physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Nectriaceae")
+
+# Calculate the total abundance of Nectriaceae for each sample
+meta = data.frame(AyBCode.percent@sam_data)
+otudf = as.data.frame(t(as.data.frame(physeq.a.genus@otu_table)))
+meta$Nectriaceae = rowSums(otudf)
+
+stat.test1 <- meta %>%
+  t_test(Nectriaceae ~ Group) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+
+# Plot a graph of the abundance of Nectriaceae for each sample grouped by Group:
+Nectriaceae.Rich <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
+                             aes(x = Group, y = Nectriaceae, colour = interaction(Group))) +
+  geom_point(alpha = 1, position = "jitter", size = 4) +
+  geom_boxplot(alpha = 0, colour = "black", size = 0.8)+
+  theme_classic() + 
+  labs(x = "", y = "Percentange (%)") +
+  stat_pvalue_manual(stat.test1, 
+                     y.position = c(26, 28, 30),
+                     label = "p.adj.signif",
+                     face="bold", 
+                     size = 6, 
+                     linetype = 1,
+                     tip.length = 0.02,
+                     inherit.aes = FALSE) + 
+  scale_y_continuous(limits=c(0, 30), breaks = c(0, 10, 20, 30)) +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Set1")+
+  scale_fill_brewer(palette="Set1")
+
+# pdf(file = "Nectriaceae.ITS.pdf", width = 6, height = 5)
+Nectriaceae.Rich
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.a.genus, meta, otudf, AyBCode.percent)
+```
 ```{r sessionInfo, warning=FALSE, message=FALSE}
 sessionInfo()
 ```
