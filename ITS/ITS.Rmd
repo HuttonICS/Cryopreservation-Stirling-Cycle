@@ -1,7 +1,7 @@
 ---
 title: Cryopreservation of a soil microbiome using a Stirling Cycle approach – a genomic (ITS data) assessment
 author: Payton Yau
-date: 2023-11-03
+date: 2024-02-05
 output:
   pdf_document:
     toc: true
@@ -79,6 +79,58 @@ physeq.norm.group = merge_samples(physeq.norm, "Group") # Sum between replicate 
 sample_data(physeq.norm.group)$Group <- rownames(sample_data(physeq.norm.group))
 
 rm(total, standf)
+```
+
+
+```{r TOP10.Direct.RawReads, warning=FALSE, message=FALSE}
+meta <- data.frame(physeq.norm@sam_data)
+
+# Now you can use 'meta_df' in your functions
+stat.test1 <- meta %>%
+  t_test(Raw_Reads ~ Group) %>%
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance()
+
+print(stat.test1)
+
+# Plot a graph of the abundance of Fusarium for each sample grouped by Group:
+Raw_Reads.Ori <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
+                        aes(x = Group, y = Raw_Reads, colour = interaction(Group))) +
+  geom_point(alpha = 1, position = "jitter", size = 4) +
+  geom_boxplot(alpha = 0, colour = "black", size = 0.8) +
+  scale_y_continuous(labels = scales::comma, limits=c(0, 2100000), 
+                     breaks = c(0, 500000, 1000000, 1500000, 2000000)) + 
+    stat_pvalue_manual(stat.test1, 
+                     y.position = c(1825000, 1950000, 2100000),
+                     label = "p.adj.signif",
+                     face="bold", 
+                     size = 6, 
+                     linetype = 1,
+                     tip.length = 0.02,
+                     inherit.aes = FALSE) + 
+  theme_classic() + 
+  labs(x = "", y = "Read") +
+  theme(text = element_text(size=18, colour = "black"), 
+        axis.ticks = element_line(colour = "black", size = 1.25),
+        axis.line = element_line(colour = 'black', size = 1.25),
+        axis.text.x = element_text(colour = "black",
+                                   angle=0, 
+                                   size = 13, face="bold"),
+        axis.text.y = element_text(angle=0, hjust=0, colour = "black",
+                                   size = 13, face="bold"),
+        axis.title.y = element_text(color="black", size=15,face="bold"),
+        legend.position = "none") +
+  scale_color_brewer(palette="Set2")+
+  scale_fill_brewer(palette="Set2")
+
+# pdf(file = "Raw_Reads.ITS.pdf", width = 6, height = 5)
+Raw_Reads.Ori
+# Close the PDF device and save the plot to a file
+# dev.off()
+
+
+# Clean up by removing objects that are no longer needed
+rm(physeq.ori, meta, Raw_Reads.Ori, stat.test1)
 ```
 
 ### Beta diversity
@@ -378,6 +430,17 @@ taxtab10[top10otus, "Family"] <- as(tax_table(AyBCode.percent.B)[top10otus, "Fam
 tax_table(AyBCode.percent.B) <- tax_table(taxtab10)
 
 top10plot = prune_taxa(top10otus, AyBCode.percent.B)
+print(top10plot@otu_table)
+
+# Calculate the sum of each column
+col_sums <- colSums(as.data.frame(top10plot@otu_table))
+
+# Add a new row with the sums
+top10plot.df <- rbind('SUM' = col_sums, as.data.frame(top10plot@otu_table))
+
+# Print the dataframe
+print(top10plot.df)
+
 
 top10.its <- plot_bar(top10plot, fill = "Family") + coord_flip() + 
   ylab("Taxa Matched with UNITE (%)") + ylim(0, 80) + 

@@ -6,7 +6,7 @@ Various institutions store collections of soil samples in either a refrigerated 
 
 ### The study workflow and the soil used for this project:
 
-<img src="https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/soil.jpg" alt="soil texture"/>
+<img src="https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/figures/Figure_1/figure_1.jpg" alt="soil texture"/>
 
 
 ## Table of contents

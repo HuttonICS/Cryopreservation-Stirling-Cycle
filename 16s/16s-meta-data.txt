@@ -1,31 +1,31 @@
-sample-id	Label	Group	Comparison	Raw_Reads
-#q2:types	categorical	categorical	categorical	numeric
-ERR6375874	1C	Control	Direct	246069
-ERR6375957	2C	Control	Direct	160161
-ERR6375997	3C	Control	Direct	435272
-ERR6376032	5C	Control	Direct	194165
-ERR6376063	1P	Plunge	Direct	183771
-ERR6376114	2P	Plunge	Direct	446374
-ERR6376145	3P	Plunge	Direct	396369
-ERR6376173	4P	Plunge	Direct	200425
-ERR6376240	5P	Plunge	Direct	625850
-ERR6376291	1R	Rate	Direct	195671
-ERR6376334	2R	Rate	Direct	260284
-ERR6376495	3R	Rate	Direct	179039
-ERR6376576	4R	Rate	Direct	578534
-ERR6376581	5R	Rate	Direct	264684
-ERR6376586	1CE	Control	Enriched	267068
-ERR6376591	2CE	Control	Enriched	416846
-ERR6376592	3CE	Control	Enriched	576261
-ERR6376812	4CE	Control	Enriched	520926
-ERR6376813	5CE	Control	Enriched	301919
-ERR6376814	1PE	Plunge	Enriched	350703
-ERR6376815	2PE	Plunge	Enriched	163302
-ERR6377043	3PE	Plunge	Enriched	360018
-ERR6377045	4PE	Plunge	Enriched	386624
-ERR6377046	5PE	Plunge	Enriched	566661
-ERR6377048	1RE	Rate	Enriched	144839
-ERR6377049	2RE	Rate	Enriched	333558
-ERR6377050	3RE	Rate	Enriched	322090
-ERR6377051	4RE	Rate	Enriched	398167
-ERR6377052	5RE	Rate	Enriched	370963
+sample-id	Label	Group	Comparison	Category	Raw_Reads
+#q2:types	categorical	categorical	categorical	categorical	numeric
+ERR6375874	1C	Control	Direct	Direct.Control	246069
+ERR6375957	2C	Control	Direct	Direct.Control	160161
+ERR6375997	3C	Control	Direct	Direct.Control	435272
+ERR6376032	5C	Control	Direct	Direct.Control	194165
+ERR6376063	1P	Plunge	Direct	Direct.Plunge	183771
+ERR6376114	2P	Plunge	Direct	Direct.Plunge	446374
+ERR6376145	3P	Plunge	Direct	Direct.Plunge	396369
+ERR6376173	4P	Plunge	Direct	Direct.Plunge	200425
+ERR6376240	5P	Plunge	Direct	Direct.Plunge	625850
+ERR6376291	1R	Rate	Direct	Direct.Rate	195671
+ERR6376334	2R	Rate	Direct	Direct.Rate	260284
+ERR6376495	3R	Rate	Direct	Direct.Rate	179039
+ERR6376576	4R	Rate	Direct	Direct.Rate	578534
+ERR6376581	5R	Rate	Direct	Direct.Rate	264684
+ERR6376586	1CE	Control	Enriched	Enriched.Control	267068
+ERR6376591	2CE	Control	Enriched	Enriched.Control	416846
+ERR6376592	3CE	Control	Enriched	Enriched.Control	576261
+ERR6376812	4CE	Control	Enriched	Enriched.Control	520926
+ERR6376813	5CE	Control	Enriched	Enriched.Control	301919
+ERR6376814	1PE	Plunge	Enriched	Enriched.Plunge	350703
+ERR6376815	2PE	Plunge	Enriched	Enriched.Plunge	163302
+ERR6377043	3PE	Plunge	Enriched	Enriched.Plunge	360018
+ERR6377045	4PE	Plunge	Enriched	Enriched.Plunge	386624
+ERR6377046	5PE	Plunge	Enriched	Enriched.Plunge	566661
+ERR6377048	1RE	Rate	Enriched	Enriched.Rate	144839
+ERR6377049	2RE	Rate	Enriched	Enriched.Rate	333558
+ERR6377050	3RE	Rate	Enriched	Enriched.Rate	322090
+ERR6377051	4RE	Rate	Enriched	Enriched.Rate	398167
+ERR6377052	5RE	Rate	Enriched	Enriched.Rate	370963
