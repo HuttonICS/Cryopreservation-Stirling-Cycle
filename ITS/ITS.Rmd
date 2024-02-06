@@ -389,6 +389,31 @@ print(upset_plot)
 # Close the PDF device and save the plot to a file
 # dev.off()  
 ```
+```{r Venn_Enriched, warning=FALSE, message=FALSE}
+# Extract the rows where the value is 1 for each column
+Cont <- rownames(temp_df)[temp_df$Control == 1]
+Plun <- rownames(temp_df)[temp_df$Plunge == 1]
+Rate <- rownames(temp_df)[temp_df$Rate == 1]
+
+# Create a list with the extracted data
+list_data <- list("Control" = Cont, "Plunge" = Plun, "Rate" = Rate)
+
+# Use ggvenn to create the Venn diagram
+Venn <- ggvenn(
+  list_data, 
+  fill_color = c("#0073C2FF", "#EFC000FF", "#CD534CFF"),
+  stroke_size = 0.5, set_name_size = 4
+  )
+
+# Open a new PDF graphics device
+# pdf(file = "Fig08C_Venn.pdf", width=5,height=5)
+
+# Print the Venn plot
+print(Venn)
+
+# Close the PDF device and save the plot to a file
+# dev.off()
+```
 
 ### Pairwise comparison using PERMANOVA
 

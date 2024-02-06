@@ -151,7 +151,7 @@ Raw_Reads.Ori <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
   scale_y_continuous(labels = scales::comma, limits=c(140000, 750000), 
                      breaks = c(150000, 300000, 450000, 600000, 750000)) + 
     stat_pvalue_manual(stat.test1, 
-                     y.position = c(650000, 700000, 750000),
+                     y.position = c(655000, 700000, 750000),
                      label = "p.adj.signif",
                      face="bold", 
                      size = 6, 
@@ -205,7 +205,7 @@ Raw_Reads.rich <- ggplot(subset(meta, Group %in% c("Control","Plunge","Rate")),
   scale_y_continuous(labels = scales::comma, limits=c(140000, 750000), 
                      breaks = c(150000, 300000, 450000, 600000, 750000)) + 
       stat_pvalue_manual(stat.test1, 
-                     y.position = c(650000, 700000, 750000),
+                     y.position = c(655000, 700000, 750000),
                      label = "p.adj.signif",
                      face="bold", 
                      size = 6, 
@@ -387,7 +387,7 @@ alpha.rich <- ggplot(data = tab1, aes(x = x.Enriched,
   geom_point(size = 3) + 
   geom_boxplot(alpha = 0.7) + 
   stat_pvalue_manual(stat.test1, 
-                     y.position = c(70, 74.5, 80),
+                     y.position = c(70.25, 74.5, 80),
                      label = "p.adj.signif",
                      face="bold", 
                      size = 6, 
@@ -503,8 +503,8 @@ tax.ori
 # dev.off()
 
 # Clean up by removing unnecessary objects
-rm(gentab_levels, genus_levels, observationThreshold, 
-   BB, B2, data_long, gentab, tax.ori, genfac, level, level_counts, alpha.ori, stat.test)
+# rm(gentab_levels, genus_levels, observationThreshold, 
+#    BB, B2, data_long, gentab, tax.ori, genfac, level, level_counts, alpha.ori, stat.test)
 
 ```
 #### Enriched
@@ -669,10 +669,36 @@ print(UpSet.Ori)
 # dev.off()  
 
 # Clean up by removing unnecessary objects
-rm(B, B2, sample_data, 
-   otu_table, abundance, D, E,
-   binary_fun, col, binary_fun, UpSet.Ori, df.direct.family)
+# rm(B, B2, sample_data, 
+#    otu_table, abundance, D, E,
+#    binary_fun, col, binary_fun, UpSet.Ori, df.direct.family)
 
+```
+
+```{r Venn, warning=FALSE, message=FALSE}
+# Extract the rows where the value is 1 for each column
+Cont <- rownames(df.direct.family)[df.direct.family$Control == 1]
+Plun <- rownames(df.direct.family)[df.direct.family$Plunge == 1]
+Rate <- rownames(df.direct.family)[df.direct.family$Rate == 1]
+
+# Create a list with the extracted data
+list_data <- list("Control" = Cont, "Plunge" = Plun, "Rate" = Rate)
+
+# Use ggvenn to create the Venn diagram
+Venn <- ggvenn(
+  list_data, 
+  fill_color = c("#0073C2FF", "#EFC000FF", "#CD534CFF"),
+  stroke_size = 0.5, set_name_size = 4
+  )
+
+# Open a new PDF graphics device
+# pdf(file = "Fig08C_Venn.pdf", width=5,height=5)
+
+# Print the Venn plot
+print(Venn)
+
+# Close the PDF device and save the plot to a file
+# dev.off()
 ```
 #### Enriched
 ```{r UpSetR2, warning=FALSE, message=FALSE}
@@ -750,10 +776,37 @@ print(upset.Rich)
 # dev.off()  
 
 # Clean up by removing unnecessary objects
-rm(B, B2, sample_data, 
-   otu_table, abundance, D, E,
-   binary_fun, col, binary_fun, upset.Rich, df.enriched.family)
+# rm(B, B2, sample_data, 
+#    otu_table, abundance, D, E,
+#    binary_fun, col, binary_fun, upset.Rich, df.enriched.family)
 ```
+
+```{r Venn_Enriched, warning=FALSE, message=FALSE}
+# Extract the rows where the value is 1 for each column
+Cont <- rownames(df.enriched.family)[df.enriched.family$Control == 1]
+Plun <- rownames(df.enriched.family)[df.enriched.family$Plunge == 1]
+Rate <- rownames(df.enriched.family)[df.enriched.family$Rate == 1]
+
+# Create a list with the extracted data
+list_data <- list("Control" = Cont, "Plunge" = Plun, "Rate" = Rate)
+
+# Use ggvenn to create the Venn diagram
+Venn <- ggvenn(
+  list_data, 
+  fill_color = c("#0073C2FF", "#EFC000FF", "#CD534CFF"),
+  stroke_size = 0.5, set_name_size = 4
+  )
+
+# Open a new PDF graphics device
+# pdf(file = "Fig08C_Venn.pdf", width=5,height=5)
+
+# Print the Venn plot
+print(Venn)
+
+# Close the PDF device and save the plot to a file
+# dev.off()
+```
+
 ### Pairwise comparison using PERMANOVA
 Pairwise PERMANOVA (Permutational Multivariate Analysis of Variance) is a statistical method used in microbial community studies to examine differences between groups or treatments. It assesses the dissimilarity between samples, allowing for the comparison of multivariate data. This approach is useful to focus on specific group comparisons rather than comparing all groups simultaneously. It enables the investigation of the effects of specific treatments on microbial communities, helping to determine if there are significant differences in community composition between selected groups. By considering variation within and between groups, pairwise PERMANOVA offers a robust statistical assessment of dissimilarity, providing insights into community structure differences.
 
