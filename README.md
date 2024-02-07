@@ -43,6 +43,8 @@ Various institutions store collections of soil samples in either a refrigerated 
 
 ### Figures and Supplementary Data
 
+07-[Figures](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/tree/main/figures+suppl_info)
+
 ###  Information
 The preprint is available at [agrixiv](https://agrirxiv.org/search-details/?pan=20210277652)
 
