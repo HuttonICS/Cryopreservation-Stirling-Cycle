@@ -6,8 +6,7 @@ Various institutions store collections of soil samples in either a refrigerated 
 
 ### The study workflow and the soil used for this project:
 
-<img src="https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/figures/Figure_1/figure_1.jpg" alt="soil texture"/>
-
+<img src="https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/figures%2Bsuppl_info/Figure_1/figure_1.jpg" alt="soil texture"/>
 
 ## Table of contents
 ### 16S Sequencing data
@@ -34,13 +33,16 @@ Various institutions store collections of soil samples in either a refrigerated 
 
 02B-[(Rmarkdown - pdf) R data analysis](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/ITS.pdf)
 
-03-[(Document-zip) QC in multiqc file format](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/multiqc/multiqc.zip)
+03-[(Document-zip) QC in multiqc file format](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/multiqc/ITS-multiqc.zip)
 
 04-[(Document-qiime2) qiime2 outcomes](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/qiime2)
 
 05-[(Document-figaro) qiime2 outcomes](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/figaro)
 
 06-[(TXT) - Metadata](https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/blob/main/ITS/meta-data-ITS.txt)
+
+### Figures and Supplementary Data
+
 ###  Information
 The preprint is available at [agrixiv](https://agrirxiv.org/search-details/?pan=20210277652)
 
