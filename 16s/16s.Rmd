@@ -306,7 +306,7 @@ Beta.rich
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-rm(nmds.ori, Beta.ori, nmds.rich, Beta.rich)
+# rm(nmds.ori, Beta.ori, nmds.rich, Beta.rich)
 ```
 
 ### Alpha diversity

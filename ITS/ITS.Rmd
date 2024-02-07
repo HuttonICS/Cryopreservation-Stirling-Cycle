@@ -48,6 +48,10 @@ library("qiime2R")
 
 # devtools::install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
 library("pairwiseAdonis")
+
+# if (!require(devtools)) install.packages("devtools")
+# devtools::install_github("yanlinlin82/ggvenn")
+library("ggvenn")
 ```
 
 ### Qiime2 to Phyloseq
@@ -146,6 +150,8 @@ Beta.its <- plot_ordination(
   # title = "NMDS",
   color = "Group",
   shape = "Group") +
+    # geom_text(aes(label = paste("Stress"), round(nmds$stress, 2)), 
+    #         x = -0.9, y = -0.9, hjust = -0.9, vjust = -0.9) +
   # scale_x_discrete(name ="NMDS1 ()") + 
   # scale_y_discrete(name ="NMDS2 ()") + 
   theme_classic() + 
@@ -167,7 +173,7 @@ Beta.its
 # Close the PDF device and save the plot to a file
 # dev.off()
 
-rm(nmds, Beta.its)
+# rm(nmds, Beta.its)
 ```
 
 ### Alpha diversity
@@ -306,8 +312,8 @@ tax.its
 # dev.off()
 
 # Clean up by removing unnecessary objects
-rm(gentab_levels, genus_levels, observationThreshold, 
-   BB, B2, data_long, gentab, tax.its, genfac, level, level_counts)
+# rm(gentab_levels, genus_levels, observationThreshold, 
+#    BB, B2, data_long, gentab, tax.its, genfac, level, level_counts)
 
 ```
 
@@ -490,6 +496,60 @@ top10.its
 #    standf, AyBCode.percent, top10otus, 
 #    taxtab10, top10plot, top10.ori, top10.rich)
 ```
+
+### Calculate the statistics in percentange on the top 10 family level 
+```{r TOP10.Direct.cal, warning=FALSE, message=FALSE}
+## Normalised number of reads in percentage
+AyBCode.percent = transform_sample_counts(physeq.norm, standf)
+
+# Subset the phyloseq object for the top 10 OTUs
+physeq.top10 <- subset_taxa(AyBCode.percent, Family %in% top10otus)
+
+# Aggregate taxa at the genus level
+physeq.top10 <- aggregate_taxa(physeq.top10, "Family", verbose = TRUE)
+
+# Calculate the total abundance of Fusarium for each sample
+meta = AyBCode.percent@sam_data
+otudf = as.data.frame(t(as.data.frame(physeq.top10@otu_table)))
+
+# Assuming 'meta' and 'otudf' are your data frames
+combined_df <- merge(meta, otudf, by = "row.names", all = TRUE)
+
+# Set row names of the combined data frame
+rownames(combined_df) <- combined_df$Row.names
+
+# Remove the 'Row.names' column
+combined_df$Row.names <- NULL
+
+# Get the column names from "Bryobacteraceae" onwards
+cols <- colnames(combined_df)[which(colnames(combined_df) == "Didymellaceae"):ncol(combined_df)]
+
+# Initialize an empty data frame to store the test results
+stat.test_df <- data.frame()
+
+# Loop over the columns
+for(i in seq_along(cols)){
+  # Perform the t-test for each column
+  stats <- combined_df %>%
+    t_test(reformulate("Group", response=cols[i])) %>%
+    adjust_pvalue(method = "bonferroni") %>%
+    add_significance()
+  
+  # Add a new column to record the run number
+  stats$Run <- i
+  
+  # Bind the results to the data frame
+  stat.test_df <- rbind(stat.test_df, stats)
+}
+
+# Print the data frame
+print(stat.test_df)
+
+
+# Clean up by removing objects that are no longer needed
+# rm(physeq.top10, meta, otudf, combined_df, cols, col, stats, calc_stats, top10otus, stats_list)
+```
+
 ### Plot the graph for Moraxellaceae, Enriched
 ```{r TOP10.Enriched.Clavicipitaceae, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
