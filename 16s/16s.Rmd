@@ -2,7 +2,7 @@
 title: Cryopreservation of a soil microbiome using a Stirling Cycle approach – a genomic (16s data)
   assessment
 author: Payton Yau
-date: 2024-02-02
+date: 2024-02-09
 output:
   pdf_document:
     toc: true
@@ -72,7 +72,7 @@ physeq ## confirm the object
 
 
 ### Normalise number of reads in each sample by using median sequencing depth
-Normalising the number of reads in each sample is an important step in analysing sequencing data, as it helps to remove any biases introduced by differences in sequencing depth across samples. One commonly used method for normalisation is to scale the read counts by the median sequencing depth.
+In the process of data normalisation, we employed a technique known as Total Sum Scaling (TSS). This method is particularly effective in scaling the counts in each sample to correspond with the median sequencing depth observed across all samples. Consequently, this approach yields normalised sequence counts.
 
 ```{r pressure, , warning=FALSE, message=FALSE}
 # Calculate the median sequencing depth
@@ -87,20 +87,20 @@ rm(total, standf)
 ```
 
 ### Sub-grouping
-Separate analysis is necessary for the direct and enriched experiments since the data contained in each subset differs and requires distinct examination.
+Separate analysis is necessary for the uncultivated and enriched experiments since the data contained in each subset differs and requires distinct examination.
 
 ```{r abc, warning=FALSE, message=FALSE}
 
-## Subgroup - Direct
-physeq.norm.ori <- subset_samples(physeq.norm, Comparison=="Direct") 
+## Subgroup - Uncultivated
+physeq.norm.ori <- subset_samples(physeq.norm, Comparison=="Uncultivated") 
 # Get the column names of the sample_data
 colnames(sample_data(physeq.norm.ori))
 # Find the index of the "Group" column
 group_index <- which(colnames(sample_data(physeq.norm.ori)) == "Group")
-# Rename the "Group" column to "Direct"
-colnames(sample_data(physeq.norm.ori))[group_index] <- "Direct"
-# Copy the column information from "Direct" to "Group"
-sample_data(physeq.norm.ori)$Group <- sample_data(physeq.norm.ori)$Direct
+# Rename the "Group" column to "Uncultivated"
+colnames(sample_data(physeq.norm.ori))[group_index] <- "Uncultivated"
+# Copy the column information from "Uncultivated" to "Group"
+sample_data(physeq.norm.ori)$Group <- sample_data(physeq.norm.ori)$Uncultivated
 
 
 ## Subgroup - Enriched
@@ -109,7 +109,7 @@ physeq.norm.rich <- subset_samples(physeq.norm, Comparison=="Enriched")
 colnames(sample_data(physeq.norm.rich))
 # Find the index of the "Group" column
 group_index <- which(colnames(sample_data(physeq.norm.rich)) == "Group")
-# Rename the "Group" column to "Direct"
+# Rename the "Group" column to "Uncultivated"
 colnames(sample_data(physeq.norm.rich))[group_index] <- "Enriched"
 # Copy the column information from "Enriched" to "Group"
 sample_data(physeq.norm.rich)$Group <- sample_data(physeq.norm.rich)$Enriched
@@ -119,8 +119,8 @@ sample_data(physeq.norm.rich)$Group <- sample_data(physeq.norm.rich)$Enriched
 physeq.norm.group = merge_samples(physeq.norm, "Category") # Sum between replicate samples
 sample_data(physeq.norm.group)$Category <- rownames(sample_data(physeq.norm.group))
 
-physeq.norm.ori.group = merge_samples(physeq.norm.ori, "Direct") # Sum between replicate samples
-sample_data(physeq.norm.ori.group)$Direct <- rownames(sample_data(physeq.norm.ori.group))
+physeq.norm.ori.group = merge_samples(physeq.norm.ori, "Uncultivated") # Sum between replicate samples
+sample_data(physeq.norm.ori.group)$Uncultivated <- rownames(sample_data(physeq.norm.ori.group))
 
 physeq.norm.rich.group = merge_samples(physeq.norm.rich, "Enriched") # Sum between replicate samples
 sample_data(physeq.norm.rich.group)$Enriched <- rownames(sample_data(physeq.norm.rich.group))
@@ -129,9 +129,9 @@ sample_data(physeq.norm.rich.group)$Enriched <- rownames(sample_data(physeq.norm
 rm(group_index)
 ```
 
-### Plot the raw reads, Direct
-```{r TOP10.Direct.RawReads, warning=FALSE, message=FALSE}
-physeq.ori <- subset_samples(physeq, Comparison=="Direct") 
+### Plot the raw reads, Uncultivated
+```{r TOP10.Uncultivated.RawReads, warning=FALSE, message=FALSE}
+physeq.ori <- subset_samples(physeq, Comparison=="Uncultivated") 
 # Calculate the total raw reads of for each sample
 meta <- data.frame(physeq.ori@sam_data)
 
@@ -240,17 +240,17 @@ rm(physeq.rich, meta, Raw_Reads.rich)
 ### Beta diversity 
 Beta diversity is a measure used in ecological and microbial community studies to assess the dissimilarity of species or taxa compositions between different samples. It quantifies the variation in community structure and helps researchers understand the diversity and uniqueness of microbial communities. Various metrics, such as Bray-Curtis dissimilarity and Jaccard index, are employed to calculate beta diversity values, which can be visualised using techniques like Principal Coordinate Analysis or Non-Metric Multidimensional Scaling. Beta diversity analysis allows for comparisons of microbial communities across habitats, treatments, or environmental gradients, revealing factors influencing community variation and identifying key drivers of community structure. It provides insights into the functional and ecological significance of different microbial assemblages and their responses to environmental changes, aiding our understanding of microbial community dynamics and their roles in ecology, environmental science, and human health research.
 
-#### Beta diversity  - Direct
+#### Beta diversity  - Uncultivated
 ```{r two, , warning=FALSE, message=FALSE}
 nmds.ori <- ordinate(physeq = physeq.norm.ori, method = "NMDS", distance = "bray")
 
 Beta.ori <- plot_ordination(
   physeq = physeq.norm.ori,
   ordination = nmds.ori,
-  color = "Direct",
-  shape = "Direct") +
+  color = "Uncultivated",
+  shape = "Uncultivated") +
   theme_classic() + 
-  geom_point(aes(color = Direct), alpha = 1, size = 4) +
+  geom_point(aes(color = Uncultivated), alpha = 1, size = 4) +
   theme(text = element_text(size=18, colour = "black"), 
         axis.ticks = element_line(colour = "black", size = 1.1),
         axis.line = element_line(colour = 'black', size = 1.1),
@@ -262,7 +262,7 @@ Beta.ori <- plot_ordination(
         axis.title.x = element_text(color="black", size=20,face="bold"),
         legend.position = "bottom") + # This line moves the legend to the bottom
   stat_ellipse(geom = "polygon", type="norm", 
-               alpha=0.25, aes(fill = Direct)) + # polygon, path, point
+               alpha=0.25, aes(fill = Uncultivated)) + # polygon, path, point
   scale_color_brewer(palette="Set2")+
   scale_fill_brewer(palette="Set2")
 
@@ -273,7 +273,7 @@ Beta.ori
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-rm(nmds.ori, Beta.ori, nmds.rich, Beta.rich)
+rm(nmds.ori, Beta.ori, nmds.ori)
 ```
 
 #### Beta diversity  - Enriched
@@ -306,28 +306,28 @@ Beta.rich
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-# rm(nmds.ori, Beta.ori, nmds.rich, Beta.rich)
+rm(nmds.ori, Beta.ori, nmds.rich, Beta.rich)
 ```
 
 ### Alpha diversity
 Alpha diversity is a fundamental concept in ecology and refers to the diversity or richness of species within a specific community or habitat. In the context of microbial ecology, alpha diversity represents the diversity of microorganisms within a given sample or microbiome. It provides insights into the variety and evenness of microbial species present in a particular environment. Common measures of alpha diversity include species richness, which counts the number of unique species, and evenness, which assesses the distribution of species abundances. Alpha diversity is crucial for understanding the stability, resilience, and functional potential of microbial communities. It can be influenced by various factors, including environmental conditions, host factors, and perturbations. By comparing alpha diversity across different samples or experimental groups, researchers can gain insights into the impact of factors such as disease, habitat changes, or interventions on microbial community structure.
 
-#### Direct
+#### Uncultivated
 ```{r forth, , warning=FALSE, message=FALSE}
 tab = cbind(x = sample_data(physeq.norm.ori), 
             y = estimate_richness(physeq.norm.ori, measures = 'Fisher'))
 
 stat.test <- tab %>%
-  t_test(Fisher ~ x.Direct) %>%
+  t_test(Fisher ~ x.Uncultivated) %>%
   adjust_pvalue(method = "bonferroni") %>%
   add_significance()
 
 print(stat.test)
 
-alpha.ori <- ggplot(data = tab, aes(x = x.Direct, 
+alpha.ori <- ggplot(data = tab, aes(x = x.Uncultivated, 
                                     y = Fisher, 
-                                    color = x.Direct, 
-                                    fill = x.Direct)) + 
+                                    color = x.Uncultivated, 
+                                    fill = x.Uncultivated)) + 
   theme_classic() + 
   labs(
     x = element_blank(), 
@@ -361,7 +361,7 @@ alpha.ori
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-# rm(tab, stat.test, alpha.ori)
+rm(tab, stat.test, alpha.ori)
 ```
 
 #### Enriched
@@ -419,7 +419,7 @@ rm(tab1, stat.test1, alpha.rich)
 
 #### Determine the count of taxa within each level and group
 The purpose of this process is to visualise the distribution of the number of matched abundance across different groups and to identify any patterns in the distribution of the processed abundance within individual group.
-#### Direct
+#### Uncultivated
 ```{r physeq.norm.ori.group, warning=FALSE, message=FALSE}
 # Create an empty list to store genus-level abundance data for each taxonomic level
 gentab_levels <- list()
@@ -472,16 +472,16 @@ data_long <- melt(B2, id.vars = "name",
                   variable.name = "Dataset", 
                   value.name = "Count")
 
-colnames(data_long) = c("Direct","Taxonomic.Level","Count")
+colnames(data_long) = c("Uncultivated","Taxonomic.Level","Count")
 
 
 tax.ori <- ggplot(data_long, aes(x = Taxonomic.Level, 
                                  y = Count, 
-                                 color = Direct, 
-                                 group = Direct)) +
+                                 color = Uncultivated, 
+                                 group = Uncultivated)) +
   geom_line(size = 2) +
   geom_point(size = 4) +
-  labs(x = "Taxonomic Level", y = "Count", color = "Direct") +
+  labs(x = "Taxonomic Level", y = "Count", color = "Uncultivated") +
   theme_classic() + 
   theme(
     text = element_text(size = 19, colour = "black"), 
@@ -503,8 +503,8 @@ tax.ori
 # dev.off()
 
 # Clean up by removing unnecessary objects
-# rm(gentab_levels, genus_levels, observationThreshold, 
-#    BB, B2, data_long, gentab, tax.ori, genfac, level, level_counts, alpha.ori, stat.test)
+rm(gentab_levels, genus_levels, observationThreshold, 
+   BB, B2, data_long, gentab, tax.ori, genfac, level, level_counts, alpha.ori, stat.test)
 
 ```
 #### Enriched
@@ -592,7 +592,7 @@ rm(gentab_levels, genus_levels, observationThreshold,
 
 ### Upset plot using UpsetR
 Venn diagrams are commonly used for visualizing sets, but they can become complex with more than five sets. UpSet graphs, on the other hand, offer a more efficient way to display intersections and complements, especially for larger or multiple datasets. They provide a more intuitive and informative data representation.
-#### Direct
+#### Uncultivated
 ```{r UpSetR1, warning=FALSE, message=FALSE}
 # Aggregate taxa at the genus level
 B <- aggregate_taxa(physeq.norm.ori.group, "Genus", verbose = TRUE)
@@ -610,7 +610,7 @@ abundance <- as.vector(otu_table)
 
 # Create a tibble with the extracted data
 D <- tibble(
-  Sample = rep(sample_data$Direct, each = nrow(otu_table)),
+  Sample = rep(sample_data$Uncultivated, each = nrow(otu_table)),
   ASV = rep(rownames(otu_table), times = ncol(otu_table)),
   Abundance = abundance
 ) %>%
@@ -625,10 +625,10 @@ D$Abundance <- NULL
 
 # Rename the second column to "ASV"
 names(D)[2] <- "ASV"
-names(D)[1] <- "Direct"
+names(D)[1] <- "Uncultivated"
 
 # Convert data from long to wide format
-E <- dcast(D, ASV ~ Direct)
+E <- dcast(D, ASV ~ Uncultivated)
 
 # Define a binary function
 binary_fun <- function(x) {
@@ -638,15 +638,15 @@ binary_fun <- function(x) {
 
 
 # Apply the binary function to columns 2 to 4
-df.direct.family <- apply(E[2:4], 2, binary_fun)
-df.direct.family <- as.data.frame(df.direct.family)
-rownames(df.direct.family) <- E$ASV
+df.uncultivated.family <- apply(E[2:4], 2, binary_fun)
+df.uncultivated.family <- as.data.frame(df.uncultivated.family)
+rownames(df.uncultivated.family) <- E$ASV
 
 col = c("#FC8D62", "#8DA0CB","#66C2A5")
 
 # Create an UpSet plot
-UpSet.Ori <- upset(df.direct.family, 
-                    sets = colnames(df.direct.family), 
+UpSet.Ori <- upset(df.uncultivated.family, 
+                    sets = colnames(df.uncultivated.family), 
                     sets.bar.color = (col),
                     order.by = "freq", 
                     empty.intersections = "on",
@@ -669,17 +669,17 @@ print(UpSet.Ori)
 # dev.off()  
 
 # Clean up by removing unnecessary objects
-# rm(B, B2, sample_data, 
-#    otu_table, abundance, D, E,
-#    binary_fun, col, binary_fun, UpSet.Ori, df.direct.family)
+rm(B, B2, sample_data, 
+   otu_table, abundance, D, E,
+   binary_fun, col, binary_fun, UpSet.Ori)
 
 ```
 
-```{r Venn, warning=FALSE, message=FALSE}
+```{r Venn1, warning=FALSE, message=FALSE}
 # Extract the rows where the value is 1 for each column
-Cont <- rownames(df.direct.family)[df.direct.family$Control == 1]
-Plun <- rownames(df.direct.family)[df.direct.family$Plunge == 1]
-Rate <- rownames(df.direct.family)[df.direct.family$Rate == 1]
+Cont <- rownames(df.uncultivated.family)[df.uncultivated.family$Control == 1]
+Plun <- rownames(df.uncultivated.family)[df.uncultivated.family$Plunge == 1]
+Rate <- rownames(df.uncultivated.family)[df.uncultivated.family$Rate == 1]
 
 # Create a list with the extracted data
 list_data <- list("Control" = Cont, "Plunge" = Plun, "Rate" = Rate)
@@ -699,6 +699,8 @@ print(Venn)
 
 # Close the PDF device and save the plot to a file
 # dev.off()
+# Clean up by removing unnecessary objects
+rm(df.uncultivated.family, Venn, Cont, Plun, Rate)
 ```
 #### Enriched
 ```{r UpSetR2, warning=FALSE, message=FALSE}
@@ -733,10 +735,10 @@ D$Abundance <- NULL
 
 # Rename the second column to "ASV"
 names(D)[2] <- "ASV"
-names(D)[1] <- "Direct"
+names(D)[1] <- "Uncultivated"
 
 # Convert data from long to wide format
-E <- dcast(D, ASV ~ Direct)
+E <- dcast(D, ASV ~ Uncultivated)
 
 # Define a binary function
 binary_fun <- function(x) {
@@ -776,9 +778,9 @@ print(upset.Rich)
 # dev.off()  
 
 # Clean up by removing unnecessary objects
-# rm(B, B2, sample_data, 
-#    otu_table, abundance, D, E,
-#    binary_fun, col, binary_fun, upset.Rich, df.enriched.family)
+rm(B, B2, sample_data, 
+   otu_table, abundance, D, E,
+   binary_fun, col, binary_fun, upset.Rich)
 ```
 
 ```{r Venn_Enriched, warning=FALSE, message=FALSE}
@@ -805,6 +807,9 @@ print(Venn)
 
 # Close the PDF device and save the plot to a file
 # dev.off()
+
+# Clean up by removing unnecessary objects
+rm(df.enriched.family, Venn, Cont, Plun, Rate)
 ```
 
 ### Pairwise comparison using PERMANOVA
@@ -818,7 +823,7 @@ pairwise.adonis(dat.rich, metdat.rich$Group, sim.function = "vegdist",
                 sim.method = "bray", p.adjust.m = "bonferroni",
                 reduce = NULL, perm = 100000)
 
-## Direct data
+## Uncultivated data
 metdat.ori = as.data.frame(as.matrix(physeq.norm.ori@sam_data))
 dat.ori = as.data.frame(t(as.data.frame(physeq.norm.ori@otu_table)))
 pairwise.adonis(dat.ori, metdat.ori$Group, sim.function = "vegdist",
@@ -832,8 +837,8 @@ rm(metdat.rich, dat.rich, metdat.ori, dat.ori)
 ### Top 10 at family level
 Identifying the top 10 bacteria in the top 10 family level and their corresponding percentages provides a snapshot of the microbial community’s composition. 
 
-#### Direct treatment
-```{r TOP10.Direct, warning=FALSE, message=FALSE}
+#### Uncultivated treatment
+```{r TOP10.Uncultivated, warning=FALSE, message=FALSE}
 ##### create a function
 standf = function(x) x / sum(x) * 100
 ##### unwanted taxon names
@@ -888,10 +893,10 @@ top10.ori
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-# rm(AyBCode.percent, AyBCode.percent.B, taxtab10, tax_table, top10plot, top10.ori)
+rm(AyBCode.percent, AyBCode.percent.B, taxtab10, tax_table, top10plot, top10.ori)
 ```
 ### Calculate the statistics in percentange on the top 10 family level 
-```{r TOP10.Direct.cal, warning=FALSE, message=FALSE}
+```{r TOP10.Uncultivated.cal, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
 AyBCode.percent = transform_sample_counts(physeq.norm.ori, standf)
 
@@ -940,11 +945,11 @@ print(stat.test_df)
 
 
 # Clean up by removing objects that are no longer needed
-# rm(physeq.top10, meta, otudf, combined_df, cols, col, stats, calc_stats, top10otus, stats_list)
+rm(physeq.top10, meta, otudf, combined_df, cols, col, stats, calc_stats, top10otus, stats_list)
 ```
 
-### Plot the graph for Gemmataceae , Direct
-```{r TOP10.Direct.Bacillaceae, warning=FALSE, message=FALSE}
+### Plot the graph for Gemmataceae , Uncultivated
+```{r TOP10.Uncultivated.Bacillaceae, warning=FALSE, message=FALSE}
 physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Gemmataceae")
 
 # Calculate the total abundance of Fusarium for each sample
@@ -996,8 +1001,8 @@ Gemmataceae.Ori
 # Clean up by removing objects that are no longer needed
 rm(physeq.a.genus, meta, otudf, Bacillaceae.Ori)
 ```
-### Plot the graph for Bryobacteraceae, Direct
-```{r TOP10.Direct.Bryobacteraceae, warning=FALSE, message=FALSE}
+### Plot the graph for Bryobacteraceae, Uncultivated
+```{r TOP10.Uncultivated.Bryobacteraceae, warning=FALSE, message=FALSE}
 physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Bryobacteraceae")
 
 # Calculate the total abundance of Fusarium for each sample
@@ -1046,7 +1051,7 @@ Bryobacteraceae.Ori
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-# rm(meta, otudf, Bryobacteraceae.Ori)
+rm(meta, otudf, Bryobacteraceae.Ori)
 ```
 #### Enriched treatment
 ```{r TOP10.Enriched, warning=FALSE, message=FALSE}
@@ -1099,8 +1104,8 @@ top10.rich
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-# rm(physeq.ori, physeq.rich, AyBCode, 
-#    AyBCode.percent.B, taxtab10, top10plot, top10.ori, top10.rich)
+rm(physeq.ori, physeq.rich, AyBCode, 
+   AyBCode.percent.B, taxtab10, top10plot, top10.ori, top10.rich)
 ```
 
 ### Calculate the statistics in percentange on the top 10 family level
@@ -1207,7 +1212,7 @@ Planococcaceae.Rich
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-# rm(physeq.a.genus, meta, otudf, Clostridiaceae.Rich)
+rm(physeq.a.genus, meta, otudf, Clostridiaceae.Rich)
 ```
 
 ### Plot the graph for Moraxellaceae, Enriched
@@ -1261,7 +1266,8 @@ Sporomusaceae.Rich
 # dev.off()
 
 # Clean up by removing objects that are no longer needed
-rm(physeq.a.genus, meta, otudf, AyBCode.percent, stat.test1, Sporomusaceae.Rich, stats_list)
+rm(physeq.a.genus, meta, otudf, AyBCode.percent, 
+   stat.test1, Sporomusaceae.Rich, stats_list)
 ```
 
 ```{r physeq.norm.group, warning=FALSE, message=FALSE}
@@ -1325,19 +1331,19 @@ rm(B,B2, sample_data,
 
 ```{r Venn, warning=FALSE, message=FALSE}
 # Extract the rows where the value is 1 for each column
-Direct.Control <- rownames(df.Category.family)[df.Category.family$Direct.Control == 1]
+Uncultivated.Control <- rownames(df.Category.family)[df.Category.family$Uncultivated.Control == 1]
 Enriched.Control <- rownames(df.Category.family)[df.Category.family$Enriched.Control == 1]
 
-Direct.Plunge <- rownames(df.Category.family)[df.Category.family$Direct.Plunge == 1]
+Uncultivated.Plunge <- rownames(df.Category.family)[df.Category.family$Uncultivated.Plunge == 1]
 Enriched.Plunge <- rownames(df.Category.family)[df.Category.family$Enriched.Plunge == 1]
 
-Direct.Rate <- rownames(df.Category.family)[df.Category.family$Direct.Rate == 1]
+Uncultivated.Rate <- rownames(df.Category.family)[df.Category.family$Uncultivated.Rate == 1]
 Enriched.Rate <- rownames(df.Category.family)[df.Category.family$Enriched.Rate == 1]
 
 # Create a list with the extracted data
-list_data.1 <- list("Direct" = Direct.Control, "Enriched" = Enriched.Control)
-list_data.2 <- list("Direct" = Direct.Plunge, "Enriched" = Enriched.Plunge)
-list_data.3 <- list("Direct" = Direct.Rate, "Enriched" = Enriched.Rate)
+list_data.1 <- list("Uncultivated" = Uncultivated.Control, "Enriched" = Enriched.Control)
+list_data.2 <- list("Uncultivated" = Uncultivated.Plunge, "Enriched" = Enriched.Plunge)
+list_data.3 <- list("Uncultivated" = Uncultivated.Rate, "Enriched" = Enriched.Rate)
 
 # Use ggvenn to create the Venn diagram
 Venn.1 <- ggvenn(
