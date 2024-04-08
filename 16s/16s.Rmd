@@ -1,17 +1,11 @@
 ---
-title: Cryopreservation of a soil microbiome using a Stirling Cycle approach – a genomic (16s data)
-  assessment
+title: Cryopreservation of a soil microbiome using a Stirling Cycle approach – a genomic (16s data) assessment
 author: Payton Yau
-date: 2024-02-09
+date: 2024-04-08
 output:
-  pdf_document:
+  md_document:
     toc: true
     toc_depth: 2
-    number_sections: true
-  html_document:
-    toc: true
-    toc_depth: 2
-    number_sections: true
 ---
 
 ## Cyropreserve CABI
@@ -129,7 +123,8 @@ sample_data(physeq.norm.rich.group)$Enriched <- rownames(sample_data(physeq.norm
 rm(group_index)
 ```
 
-### Plot the raw reads, Uncultivated
+### Plot the raw reads - Uncultivated Experiment
+
 ```{r TOP10.Uncultivated.RawReads, warning=FALSE, message=FALSE}
 physeq.ori <- subset_samples(physeq, Comparison=="Uncultivated") 
 # Calculate the total raw reads of for each sample
@@ -183,7 +178,7 @@ Raw_Reads.Ori
 rm(physeq.ori, meta, Raw_Reads.Ori, stat.test1)
 ```
 
-### Plot the raw reads, Enriched
+### Plot the raw reads - Enriched Experiment
 ```{r TOP10.Rich.RawReads, warning=FALSE, message=FALSE}
 physeq.rich <- subset_samples(physeq, Comparison=="Enriched") 
 # Calculate the total raw reads of for each sample
@@ -240,7 +235,7 @@ rm(physeq.rich, meta, Raw_Reads.rich)
 ### Beta diversity 
 Beta diversity is a measure used in ecological and microbial community studies to assess the dissimilarity of species or taxa compositions between different samples. It quantifies the variation in community structure and helps researchers understand the diversity and uniqueness of microbial communities. Various metrics, such as Bray-Curtis dissimilarity and Jaccard index, are employed to calculate beta diversity values, which can be visualised using techniques like Principal Coordinate Analysis or Non-Metric Multidimensional Scaling. Beta diversity analysis allows for comparisons of microbial communities across habitats, treatments, or environmental gradients, revealing factors influencing community variation and identifying key drivers of community structure. It provides insights into the functional and ecological significance of different microbial assemblages and their responses to environmental changes, aiding our understanding of microbial community dynamics and their roles in ecology, environmental science, and human health research.
 
-#### Beta diversity  - Uncultivated
+#### Beta diversity  - Uncultivated Experiment
 ```{r two, , warning=FALSE, message=FALSE}
 nmds.ori <- ordinate(physeq = physeq.norm.ori, method = "NMDS", distance = "bray")
 
@@ -276,7 +271,8 @@ Beta.ori
 rm(nmds.ori, Beta.ori, nmds.ori)
 ```
 
-#### Beta diversity  - Enriched
+#### Beta diversity  - Enriched Experiment
+
 ```{r two.b , warning=FALSE, message=FALSE}
 nmds.rich <- ordinate(physeq = physeq.norm.rich, method = "NMDS", distance = "bray")
 
@@ -312,7 +308,8 @@ rm(nmds.ori, Beta.ori, nmds.rich, Beta.rich)
 ### Alpha diversity
 Alpha diversity is a fundamental concept in ecology and refers to the diversity or richness of species within a specific community or habitat. In the context of microbial ecology, alpha diversity represents the diversity of microorganisms within a given sample or microbiome. It provides insights into the variety and evenness of microbial species present in a particular environment. Common measures of alpha diversity include species richness, which counts the number of unique species, and evenness, which assesses the distribution of species abundances. Alpha diversity is crucial for understanding the stability, resilience, and functional potential of microbial communities. It can be influenced by various factors, including environmental conditions, host factors, and perturbations. By comparing alpha diversity across different samples or experimental groups, researchers can gain insights into the impact of factors such as disease, habitat changes, or interventions on microbial community structure.
 
-#### Uncultivated
+#### Alpha diversity - Uncultivated Experiment
+
 ```{r forth, , warning=FALSE, message=FALSE}
 tab = cbind(x = sample_data(physeq.norm.ori), 
             y = estimate_richness(physeq.norm.ori, measures = 'Fisher'))
@@ -364,7 +361,8 @@ alpha.ori
 rm(tab, stat.test, alpha.ori)
 ```
 
-#### Enriched
+#### Alpha diversity -  Enriched Experiment
+
 ```{r forth.b , warning=FALSE, message=FALSE}
 tab1 = cbind(x = sample_data(physeq.norm.rich), 
             y = estimate_richness(physeq.norm.rich, measures = 'Fisher'))
@@ -418,8 +416,11 @@ rm(tab1, stat.test1, alpha.rich)
 ```
 
 #### Determine the count of taxa within each level and group
-The purpose of this process is to visualise the distribution of the number of matched abundance across different groups and to identify any patterns in the distribution of the processed abundance within individual group.
-#### Uncultivated
+The purpose of this process is to visualise the distribution of the number of matched abundance across different groups and to identify any patterns in the distribution of the processed abundance within individual group. 
+Please note that we used 15 as a threshold for observed ASVs, and those below 15 were eliminated in order to minimize potential merging errors / contamination.
+
+#### The Count of Taxa Within Each Level - Uncultivated Experiment
+
 ```{r physeq.norm.ori.group, warning=FALSE, message=FALSE}
 # Create an empty list to store genus-level abundance data for each taxonomic level
 gentab_levels <- list()
@@ -507,7 +508,8 @@ rm(gentab_levels, genus_levels, observationThreshold,
    BB, B2, data_long, gentab, tax.ori, genfac, level, level_counts, alpha.ori, stat.test)
 
 ```
-#### Enriched
+#### The Count of Taxa Within Each Level - Enriched experiment
+
 ```{r physeq.norm.rich.group, warning=FALSE, message=FALSE}
 # Create an empty list to store genus-level abundance data for each taxonomic level
 gentab_levels <- list()
@@ -590,14 +592,15 @@ rm(gentab_levels, genus_levels, observationThreshold,
 
 ```
 
-### Upset plot using UpsetR
-Venn diagrams are commonly used for visualizing sets, but they can become complex with more than five sets. UpSet graphs, on the other hand, offer a more efficient way to display intersections and complements, especially for larger or multiple datasets. They provide a more intuitive and informative data representation.
-#### Uncultivated
+### The common Taxa at Genus Level
+
+To investigate the common taxa and unique taxa, we chose the taxa at the genus level for comparison with three different groups in order to find the common core recovered taxa from our experiment. We visualised this using UpSetR plots and Venn diagrams.
+
+#### Uncultivated experiment - Upset plot
+
 ```{r UpSetR1, warning=FALSE, message=FALSE}
 # Aggregate taxa at the genus level
 B <- aggregate_taxa(physeq.norm.ori.group, "Genus", verbose = TRUE)
-# Remove undesired genera
-# B2 <- subset_taxa(B, !get("Genus") %in% c("uncultured", "Unknown"))
 
 # Remove unwanted taxon names
 taxa_to_remove <- c("uncultured", "Unknown")
@@ -675,6 +678,8 @@ rm(B, B2, sample_data,
 
 ```
 
+#### Uncultivated experiment - Vann diagram
+
 ```{r Venn1, warning=FALSE, message=FALSE}
 # Extract the rows where the value is 1 for each column
 Cont <- rownames(df.uncultivated.family)[df.uncultivated.family$Control == 1]
@@ -702,7 +707,8 @@ print(Venn)
 # Clean up by removing unnecessary objects
 rm(df.uncultivated.family, Venn, Cont, Plun, Rate)
 ```
-#### Enriched
+#### Enriched Experiment - Upset plot
+
 ```{r UpSetR2, warning=FALSE, message=FALSE}
 # Aggregate taxa at the genus level
 B <- aggregate_taxa(physeq.norm.rich.group, "Genus", verbose = TRUE)
@@ -782,6 +788,7 @@ rm(B, B2, sample_data,
    otu_table, abundance, D, E,
    binary_fun, col, binary_fun, upset.Rich)
 ```
+#### Enriched Experiment - Vann diagram
 
 ```{r Venn_Enriched, warning=FALSE, message=FALSE}
 # Extract the rows where the value is 1 for each column
@@ -835,9 +842,10 @@ rm(metdat.rich, dat.rich, metdat.ori, dat.ori)
 ```
 
 ### Top 10 at family level
-Identifying the top 10 bacteria in the top 10 family level and their corresponding percentages provides a snapshot of the microbial community’s composition. 
 
-#### Uncultivated treatment
+We begin our analysis by identifying the top 10 taxa at the family level, along with their corresponding percentages. This gives us a snapshot of the microbial community’s composition. To visualise this data, we first create a bar plot that displays the accumulated percentages of these top 10 taxa. Following this, we calculate the statistics in percentage form for these taxa at the family level.
+
+#### Uncultivated Experiment - Bar Plot
 ```{r TOP10.Uncultivated, warning=FALSE, message=FALSE}
 ##### create a function
 standf = function(x) x / sum(x) * 100
@@ -895,7 +903,8 @@ top10.ori
 # Clean up by removing objects that are no longer needed
 rm(AyBCode.percent, AyBCode.percent.B, taxtab10, tax_table, top10plot, top10.ori)
 ```
-### Calculate the statistics in percentange on the top 10 family level 
+#### Uncultivated treatment - Calculate the statistics in percentange on the top 10 family level 
+
 ```{r TOP10.Uncultivated.cal, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
 AyBCode.percent = transform_sample_counts(physeq.norm.ori, standf)
@@ -948,7 +957,10 @@ print(stat.test_df)
 rm(physeq.top10, meta, otudf, combined_df, cols, col, stats, calc_stats, top10otus, stats_list)
 ```
 
-### Plot the graph for Gemmataceae , Uncultivated
+### Uncultivated experiment - Plot the graph for Gemmataceae
+
+After observing a significant difference for Gemmataceae on the Uncultivated experiment, we used a box plot to visualise the data and the outcomes of the statistical comparison.
+
 ```{r TOP10.Uncultivated.Bacillaceae, warning=FALSE, message=FALSE}
 physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Gemmataceae")
 
@@ -1001,7 +1013,9 @@ Gemmataceae.Ori
 # Clean up by removing objects that are no longer needed
 rm(physeq.a.genus, meta, otudf, Bacillaceae.Ori)
 ```
-### Plot the graph for Bryobacteraceae, Uncultivated
+### Uncultivated experiment - Plot the graph for Bryobacteraceae
+We do the same for Bryobacteraceae in the uncultivated experiment.
+
 ```{r TOP10.Uncultivated.Bryobacteraceae, warning=FALSE, message=FALSE}
 physeq.a.genus <- subset_taxa(AyBCode.percent, Family == "Bryobacteraceae")
 
@@ -1053,7 +1067,8 @@ Bryobacteraceae.Ori
 # Clean up by removing objects that are no longer needed
 rm(meta, otudf, Bryobacteraceae.Ori)
 ```
-#### Enriched treatment
+#### Enriched Experiment - Bar Plot
+
 ```{r TOP10.Enriched, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
 AyBCode.percent = transform_sample_counts(physeq.norm.rich.group, standf)
@@ -1108,7 +1123,7 @@ rm(physeq.ori, physeq.rich, AyBCode,
    AyBCode.percent.B, taxtab10, top10plot, top10.ori, top10.rich)
 ```
 
-### Calculate the statistics in percentange on the top 10 family level
+#### Enriched Experiment - Calculate the statistics in percentange on the top 10 family level
 ```{r TOP10.B, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
 AyBCode.percent = transform_sample_counts(physeq.norm.rich, standf)
@@ -1160,7 +1175,7 @@ print(stat.test_df)
 rm(physeq.top10, meta, otudf, combined_df, cols, col, stats, calc_stats, top10otus)
 ```
 
-### Plot the graph for Clostridiaceae, Enriched
+#### Enriched Experiment - Plot the graph for Planococcaceae
 ```{r TOP10.Enriched.Clostridiaceae, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
 AyBCode.percent = transform_sample_counts(physeq.norm.rich, standf)
@@ -1215,7 +1230,8 @@ Planococcaceae.Rich
 rm(physeq.a.genus, meta, otudf, Clostridiaceae.Rich)
 ```
 
-### Plot the graph for Moraxellaceae, Enriched
+#### Enriched Experiment - Plot the graph for Sporomusaceae
+
 ```{r TOP10.Enriched.Moraxellaceae, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
 AyBCode.percent = transform_sample_counts(physeq.norm.rich, standf)
@@ -1270,6 +1286,8 @@ rm(physeq.a.genus, meta, otudf, AyBCode.percent,
    stat.test1, Sporomusaceae.Rich, stats_list)
 ```
 
+#### Comparison of the common and unique taxa between uncultured and enriched experiments in 3 treatment groups
+
 ```{r physeq.norm.group, warning=FALSE, message=FALSE}
 # Aggregate taxa at the genus level
 B <- aggregate_taxa(physeq.norm.group, "Genus", verbose = TRUE)
@@ -1284,8 +1302,6 @@ B2 <- subset_taxa(B, !get("Genus") %in% taxa_to_remove)
 sample_data <- sample_data(B2)
 otu_table <- otu_table(B2)
 abundance <- as.vector(otu_table)
-
-
 
 # Create a tibble with the extracted data
 D <- tibble(
@@ -1393,7 +1409,6 @@ print(Venn.3)
 # dev.off()
 
 ```
-
 
 ```{r sessionInfo, warning=FALSE, message=FALSE}
 sessionInfo()

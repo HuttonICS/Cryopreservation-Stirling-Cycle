@@ -1,18 +1,9 @@
 ---
 title: Cryopreservation of a soil microbiome using a Stirling Cycle approach – a genomic (ITS data) assessment
 author: Payton Yau
-date: 2024-02-05
-output:
-  pdf_document:
-    toc: true
-    toc_depth: 2
-    number_sections: true
-  html_document:
-    toc: true
-    toc_depth: 2
-    number_sections: true
+date: 2024-04-08
+output: md_document
 ---
-
 
 ## Cyropreserve - ITS data
 
@@ -319,7 +310,9 @@ tax.its
 
 ### Upset plot using UpsetR
 
-Venn diagrams are commonly used for visualizing sets, but they can become complex with more than five sets. UpSet graphs, on the other hand, offer a more efficient way to display intersections and complements, especially for larger or multiple datasets. They provide a more intuitive and informative data representation.
+To investigate the common taxa and unique taxa, we chose the taxa at the genus level for comparison with three different groups in order to find the common core recovered taxa from our experiment. We visualised this using UpSetR plots and Venn diagrams.
+
+#### Uncultivated experiment - Upset plot
 
 ```{r UpSetR, warning=FALSE, message=FALSE}
 # Aggregate taxa at the genus level
@@ -395,6 +388,8 @@ print(upset_plot)
 # Close the PDF device and save the plot to a file
 # dev.off()  
 ```
+#### Uncultivated experiment - Vann diagram
+
 ```{r Venn_Enriched, warning=FALSE, message=FALSE}
 # Extract the rows where the value is 1 for each column
 Cont <- rownames(temp_df)[temp_df$Control == 1]
@@ -435,9 +430,11 @@ pairwise.adonis(dat, metdat$Group, sim.function = "vegdist",
 rm(metdat, dat)
 ```
 
-### Top 10 samples
+### Top 10 at family level
 
-In microbiome analysis, identifying the top 10 bacteria in the top 10 family level and their corresponding percentages provides a snapshot of the microbial community’s composition. 
+We begin our analysis by identifying the top 10 taxa at the family level, along with their corresponding percentages. This gives us a snapshot of the microbial community’s composition. To visualise this data, we first create a bar plot that displays the accumulated percentages of these top 10 taxa. Following this, we calculate the statistics in percentage form for these taxa at the family level.
+
+#### Uncultivated Experiment - Bar Plot
 
 ```{r ninth, warning=FALSE, message=FALSE}
 # Merge reads by groups
@@ -497,7 +494,8 @@ top10.its
 #    taxtab10, top10plot, top10.ori, top10.rich)
 ```
 
-### Calculate the statistics in percentange on the top 10 family level 
+#### Uncultivated treatment - Calculate the statistics in percentange on the top 10 family level 
+
 ```{r TOP10.Direct.cal, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
 AyBCode.percent = transform_sample_counts(physeq.norm, standf)
@@ -550,7 +548,8 @@ print(stat.test_df)
 # rm(physeq.top10, meta, otudf, combined_df, cols, col, stats, calc_stats, top10otus, stats_list)
 ```
 
-### Plot the graph for Moraxellaceae, Enriched
+### Plot the graph for Clavicipitaceae
+
 ```{r TOP10.Enriched.Clavicipitaceae, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
 AyBCode.percent = transform_sample_counts(physeq.norm, standf)
@@ -603,7 +602,8 @@ Clavicipitaceae.Rich
 # Clean up by removing objects that are no longer needed
 rm(physeq.a.genus, meta, otudf, AyBCode.percent)
 ```
-### Plot the graph for Nectriaceae, Enriched
+### Plot the graph for Nectriaceae
+
 ```{r TOP10.Enriched.Nectriaceae, warning=FALSE, message=FALSE}
 ## Normalised number of reads in percentage
 AyBCode.percent = transform_sample_counts(physeq.norm, standf)
