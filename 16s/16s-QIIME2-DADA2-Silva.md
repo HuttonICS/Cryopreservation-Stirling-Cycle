@@ -1,13 +1,20 @@
 
 # Bash Script for 16S Sequencing Data Analysis with Qiime2
 
-This Bash script facilitates the analysis of 16S sequencing data using Qiime2. Ensure that necessary tools like fastqc, multiqc, and qiime are installed and properly configured in your environment. Also, replace the paths with actual paths where your files are located.
+This Bash script facilitates the analysis of 16S sequencing data using Qiime2. Ensure that necessary tools and properly configured in your environment. Also, replace the paths with actual paths where your files are located.
+
+- [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
+- [QIIME2 - the cummunity developed suite](https://qiime2.org/)
+- [FIGARO](https://github.com/Zymo-Research/figaro)
+- [FastQC](https://github.com/s-andrews/FastQC)
+- [MultiQC](https://multiqc.info/)
+- [Trimmomatic](http://www.usadellab.org/cms/?page=trimmomatic)
+- [SRA Toolkit](https://github.com/ncbi/sra-tools)
 
 ## Step 1: Download the 16S sequencing data from SRA database
 
 Use the fastq-dump command from the SRA Toolkit to download sequencing data from the SRA database. This tool retrieves data in the FASTQ format, which is standard for storing biological sequences and their quality scores.
 
-Ensure you have the 0SRA Toolkit](https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit) installed. You can download it from the NCBI website, via Conda using the Bioconda channel, or through package managers like apt for Ubuntu.
 
 ```bash
 fastq-dump --split-files --gzip
@@ -36,7 +43,17 @@ multiqc .
 ```
 
 ## Step 3: Create manifest file
-This step involves creating a manifest file that lists all the fastq files along with their absolute paths. This file will be used in the next step for importing the data into QIIME 2. 
+
+To create a QIIME2 artifact for the analysis, a `manifest` file for the corresponding fastq files are required. This requried a format entails the inclusion of “sample-id, absolute file-path, direction” and below is an example,
+
+|sample-id| absolute file-path| direction|
+| ----------- | ----------- |----------- |
+|ERR6375874|ERR6375874_1.fastq.gz|forward|
+|ERR6375874|ERR6375874_2.fastq.gz|reverse|
+|ERR6375957|ERR6375957_1.fastq.gz|forward|
+|ERR6375957|ERR6375957_2.fastq.gz|reverse|
+|......|...|...|
+
 
 First, we will generate a `manifest.csv` file, which is an essential component in the process of creating a QIIME 2 artifact (.QZA) file. The `manifest.csv` file provides QIIME 2 with the necessary information about your sequencing reads. We also need to create a `manifest.txt` file that lists all directories in the current working directory. This can be done using the following command:
 
@@ -98,13 +115,12 @@ This step involves denoising the paired-end sequences using DADA2, a pipeline fo
 
 The number 430 represents the length of the amplified region targeting the V3-V4 hypervariable regions of the 16S rRNA gene. 
 
-The parameter was estimated using FIGARO and can be found from https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/tree/main/16s/figaro
+The parameter was estimated using [FIGARO](https://github.com/Zymo-Research/figaro) and can be found from https://github.com/paytonyau/Cryopreservation-Stirling-Cycle/tree/main/16s/figaro
 
 The calculations are as follows that the lenth of the primers need to be removed:
 
-254-17 = 237
-
-234 - 21 = 213
+Forward: 254 - 17 = 237 nt
+Reverse: 234 - 21 = 213 nt
 
 The parameters `--p-trunc-len-f` and `--p-trunc-len-r` for truncating sequences to a fixed length, ensuring high-quality data for downstream analysis. These parameters determine the maximum length to which forward and reverse reads will be truncated after quality filtering. Here, `--p-trunc-len-f 327` and `--p-trunc-len-r 213` indicate that forward reads will be truncated to 327 bases and reverse reads to 213 bases.
 
@@ -125,6 +141,7 @@ qiime dada2 denoise-paired \
 
 ## Step 7: Classify Sequences with Silva Classifier
 This step involves classifying the sequences using a pre-trained Naive Bayes classifier and the Silva reference database. The `qiime feature-classifier classify-sklearn` command is used for this purpose.
+
 ```bash
 qiime feature-classifier classify-sklearn \
   --i-classifier /mnt/shared/scratch/pyau/qiime2-ref/silva-138-99-nb-classifier.qza \
@@ -134,7 +151,7 @@ qiime feature-classifier classify-sklearn \
 ```
 
 ## Step 8: Tabulate Metadata
-This step involves tabulating metadata for easy visualization. The `qiime metadata tabulate` command is used for this purpose.
+This step involves tabulating metadata for easy visualisation. The `qiime metadata tabulate` command is used for this purpose.
 
 ```bash
 qiime metadata tabulate \

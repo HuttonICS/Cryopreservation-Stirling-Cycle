@@ -142,7 +142,7 @@ depth
     # pdf(file = "Raw_Reads.ITS.pdf", width = 6, height = 5)
     Raw_Reads.Ori
 
-![](ITS_files/figure-markdown_strict/TOP10.Direct.RawReads-1.png)
+![](ITS_figures/figure-markdown_strict/TOP10.Direct.RawReads-1.png)
 
     # Close the PDF device and save the plot to a file
     # dev.off()
@@ -244,7 +244,7 @@ science, and human health research.
     # pdf(file = "Beta.its.pdf", width = 6,height = 6.1)
     Beta.its
 
-![](ITS_files/figure-markdown_strict/two-1.png)
+![](ITS_figures/figure-markdown_strict/two-1.png)
 
     # Close the PDF device and save the plot to a file
     # dev.off()
@@ -309,7 +309,7 @@ community structure.
     # pdf(file = "alpha.its.pdf", width = 6, height = 5)
     alpha.its
 
-![](ITS_files/figure-markdown_strict/forth-1.png)
+![](ITS_figures/figure-markdown_strict/forth-1.png)
 
     # Close the PDF device and save the plot to a file
     # dev.off()
@@ -405,7 +405,7 @@ individual group.
     # pdf(file = "tax.its.pdf", width = 6, height = 6.1)
     tax.its
 
-![](ITS_files/figure-markdown_strict/physeq.norm.ori.group-1.png)
+![](ITS_figures/figure-markdown_strict/physeq.norm.ori.group-1.png)
 
     # Close the PDF device and save the plot to a file
     # dev.off()
@@ -508,7 +508,7 @@ using UpSetR plots and Venn diagrams.
     # Print the UpSet plot
     print(upset_plot)
 
-![](ITS_files/figure-markdown_strict/UpSetR-1.png)
+![](ITS_figures/figure-markdown_strict/UpSetR-1.png)
 
     # Close the PDF device and save the plot to a file
     # dev.off()  
@@ -536,7 +536,7 @@ using UpSetR plots and Venn diagrams.
     # Print the Venn plot
     print(Venn)
 
-![](ITS_files/figure-markdown_strict/Venn_Enriched-1.png)
+![](ITS_figures/figure-markdown_strict/Venn_Enriched-1.png)
 
     # Close the PDF device and save the plot to a file
     # dev.off()
@@ -668,7 +668,7 @@ statistics in percentage form for these taxa at the family level.
     # pdf(file = "top10.its.pdf", width = 6.75, height = 5)
     top10.its
 
-![](ITS_files/figure-markdown_strict/ninth-1.png)
+![](ITS_figures/figure-markdown_strict/ninth-1.png)
 
     # Close the PDF device and save the plot to a file
     # dev.off()
@@ -806,7 +806,7 @@ statistics in percentage form for these taxa at the family level.
     # pdf(file = "Clavicipitaceae.ITS.pdf", width = 6, height = 5)
     Clavicipitaceae.Rich
 
-![](ITS_files/figure-markdown_strict/TOP10.Enriched.Clavicipitaceae-1.png)
+![](ITS_figures/figure-markdown_strict/TOP10.Enriched.Clavicipitaceae-1.png)
 
     # Close the PDF device and save the plot to a file
     # dev.off()
@@ -862,7 +862,7 @@ statistics in percentage form for these taxa at the family level.
     # pdf(file = "Nectriaceae.ITS.pdf", width = 6, height = 5)
     Nectriaceae.Rich
 
-![](ITS_files/figure-markdown_strict/TOP10.Enriched.Nectriaceae-1.png)
+![](ITS_figures/figure-markdown_strict/TOP10.Enriched.Nectriaceae-1.png)
 
     # Close the PDF device and save the plot to a file
     # dev.off()
