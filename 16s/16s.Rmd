@@ -55,10 +55,10 @@ To work with QIIME2 outcomes in the R environment, it is beneficial to convert t
 ```{r step 0, , warning=FALSE, message=FALSE}
 # Convert qiime2 to phyloseq format
 physeq <- qza_to_phyloseq(
-  features = "qiime2/430_327_213_table-with-phyla-no-mitochondria-no-chloroplast.qza", # table.qza
+  features = "./qiime2/430_237_213_table-with-phyla-no-mitochondria-no-chloroplast.qza", # table.qza
   # tree = "inst/artifacts/2020.2_moving-pictures/rooted-tree.qza",
-  taxonomy = "qiime2/430_327_213_taxonomy.qza",
-  metadata = "16s-meta-data.txt"
+  taxonomy = "./qiime2/430_237_213_taxonomy.qza",
+  metadata = "./qiime2/16s-meta-data.txt"
 )
 
 physeq ## confirm the object
@@ -237,6 +237,7 @@ Beta diversity is a measure used in ecological and microbial community studies t
 
 #### Beta diversity  - Uncultivated Experiment
 ```{r two, , warning=FALSE, message=FALSE}
+# Calculate the NMDS
 nmds.ori <- ordinate(physeq = physeq.norm.ori, method = "NMDS", distance = "bray")
 
 Beta.ori <- plot_ordination(
